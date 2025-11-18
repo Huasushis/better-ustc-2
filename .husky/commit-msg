@@ -1,0 +1,20 @@
+#!/bin/sh
+
+# 定义颜色
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+CYAN='\033[0;36m'
+NC='\033[0m' # 无色（重置颜色）
+
+# 执行 commitlint 校验
+if ! npx commitlint -e "$GIT_PARAMS"; then
+  echo ""
+  echo -e "${RED}🚫 提交信息校验失败！${NC}"
+  echo -e "${YELLOW}请按照规范书写提交信息，例如：${NC}"
+  echo -e "  ${CYAN}feat(front): 新增用户登录功能${NC}"
+  echo -e "  ${CYAN}fix(styles): 修复登录页面样式问题${NC}"
+  echo ""
+  echo -e "${GREEN}👉 建议使用：npm run commit 以规范提交${NC}"
+  exit 1
+fi
