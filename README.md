@@ -1,6 +1,9 @@
 # Better-USTC-2
+![code size](https://img.shields.io/github/languages/code-size/huasushis/better-ustc-2)
+![last commit](https://img.shields.io/github/last-commit/huasushis/better-ustc-2)
+[![commits since last release](https://img.shields.io/github/commits-since/huasushis/better-ustc-2/latest.svg)](https://github.com/huasushis/better-ustc-2)
 
-![Better-USTC-2](/src-tauri/icons/icon.png) <!-- 请将此处的 logo.png 替换为你们的 Logo 图片路径 -->
+![Better-USTC-2](/logo.png) <!-- 请将此处的 logo.png 替换为你们的 Logo 图片路径 -->
 
 Better-USTC-2 是一个面向 Android 的移动应用，目标是优化中国科学技术大学“第二课堂”平台的使用体验（推荐机制 + 活动提醒与报名）。
 
@@ -94,3 +97,10 @@ docs/development.md
 
 本项目采用 MIT 许可证（见 `LICENSE`）。
 
+---
+
+## 参考文献
+
+- [从零搭建一个 Tauri NextJS Android 项目](https://juejin.cn/post/7506408162737635343)
+
+- [PyUSTC - USTC-XeF2](https://github.com/USTC-XeF2/pyustc)
