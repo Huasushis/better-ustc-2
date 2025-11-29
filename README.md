@@ -106,3 +106,13 @@ docs/development.md
 - [PyUSTC - USTC-XeF2](https://github.com/USTC-XeF2/pyustc)
 
 - [Rust 语言圣经](https://course.rs/about-book.html)
+
+- [图文详解如何利用Git+Github进行团队协作开发](https://zhuanlan.zhihu.com/p/23478654?share_code=18vybNGa48pDO&utm_psn=1965484295083762816)
+
+- [Tauri 文档](https://v2.tauri.org.cn/start/)
+
+## 使用过的 AI 助手
+
+- [通义千问](https://www.qianwen.com)：代码支持
+- [Gemini (sometimes used in Copilot)](https://gemini.google.com)：绘图+代码支持
+- Copilot: 代码+文档支持
