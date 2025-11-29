@@ -104,3 +104,5 @@ docs/development.md
 - [从零搭建一个 Tauri NextJS Android 项目](https://juejin.cn/post/7506408162737635343)
 
 - [PyUSTC - USTC-XeF2](https://github.com/USTC-XeF2/pyustc)
+
+- [Rust 语言圣经](https://course.rs/about-book.html)
