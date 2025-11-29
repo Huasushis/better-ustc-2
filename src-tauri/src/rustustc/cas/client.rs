@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use std::env;
 
-use tauri_plugin_http::reqwest::{Client, Url};
+use tauri_plugin_http::reqwest::{Client};
 
 use serde_json::Value;
 use regex::Regex;
@@ -34,6 +34,10 @@ impl CASClient {
             client,
             cookie_store,
         }
+    }
+
+    pub fn client_ref(&self) -> &Client {
+        &self.client
     }
 
     fn aes_encrypt(data: &str, key_base64: &str) -> Result<String> {
@@ -137,29 +141,8 @@ impl CASClient {
         }
     }
 
-    pub async fn debug_cookies(&self, path: &str) -> () {
-        let url = generate_url("id", path);
-        let parsed_url = Url::parse(&url).unwrap();
-
-        let store = self.cookie_store.lock().unwrap();
-        println!("========================================");
-        println!("[Debug] Checking cookies for URL: {}", url);
-        
-        let matched_cookies = store.matches(&parsed_url);
-        if matched_cookies.is_empty() {
-            println!("[Debug] NO matching cookies found for this URL!");
-        } else {
-            for c in matched_cookies {
-                println!("[Debug] Cookie -> {}={:.10}...", c.name(), c.value());
-            }
-        }
-        println!("========================================");
-    }
-
     pub async fn get_info(&self) -> Result<UserInfo> {
         let user_url = generate_url("id", "gate/getUser");
-        // self.debug_cookies("gate/getUser").await;
-        // self.debug_cookies("cas/login").await;
 
         let resp = self.client.get(&user_url).send().await?;
         

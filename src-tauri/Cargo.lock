@@ -242,9 +242,14 @@ version = "0.1.0"
 dependencies = [
  "aes",
  "anyhow",
+ "async-trait",
  "base64 0.21.7",
+ "block-padding",
+ "cbc",
+ "chrono",
  "dotenv",
  "ecb",
+ "hex",
  "regex",
  "reqwest_cookie_store",
  "serde",
@@ -437,6 +442,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "cbc"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "26b52a9543ae338f279b96b0b9fed9c8093744685043739079ce85cd58f289a6"
+dependencies = [
+ "cipher",
+]
+
+[[package]]
 name = "cc"
 version = "1.2.45"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -492,8 +506,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "145052bdd345b87320e369255277e3fb5152762ad123a901ef5c262dd38fe8d2"
 dependencies = [
  "iana-time-zone",
+ "js-sys",
  "num-traits",
  "serde",
+ "wasm-bindgen",
  "windows-link 0.2.1",
 ]
 

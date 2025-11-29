@@ -31,6 +31,11 @@ anyhow = "1.0"
 url = "2.5"
 tauri-plugin-http = "2"
 reqwest_cookie_store = "0.8"
+chrono = { version = "0.4", features = ["serde"] }
+cbc = "0.1"
+block-padding = "0.3"
+hex = "0.4"
+async-trait = "0.1"
 
 [dev-dependencies]
 dotenv = "0.15"
