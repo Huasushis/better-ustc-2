@@ -233,7 +233,7 @@ pub struct User {
     pub classes: String,
     #[serde(rename = "scientificqiValue")]
     pub scientific_value: i32,
-    pub birthday: String,
+    pub birthday: Option<String>,
     #[serde(skip)]
     pub phone: Option<String>,
 }
@@ -245,6 +245,7 @@ impl User {
         let params = json!({ "username": self.id });
         match service.get_result(url, Some(params)).await {
             Ok(v) => {
+                println!("User info response: {:?}", v);
                 let p = v["phone"].as_str().map(|s| s.to_string());
                 self.phone = p.clone();
                 Ok(p)
@@ -307,6 +308,7 @@ pub enum Status {
     HourApproved = 34,
     HourRejected = 35,
     Finished = 40,
+    AbnormalFinished = -3,
     Unknown = -1,
 }
 
@@ -323,6 +325,7 @@ impl Status {
             Status::HourApproved => "学时审核通过",
             Status::HourRejected => "学时驳回",
             Status::Finished => "结项",
+            Status::AbnormalFinished => "异常结项",
             Status::Unknown => "未知状态",
         }
     }
@@ -340,6 +343,7 @@ impl From<i32> for Status {
             34 => Status::HourApproved,
             35 => Status::HourRejected,
             40 => Status::Finished,
+            -3 => Status::AbnormalFinished,
             _ => Status::Unknown,
         }
     }
@@ -366,6 +370,8 @@ pub struct SecondClass {
     pub need_sign_info_str: Option<String>,
     #[serde(rename = "conceive")]
     pub conceive: Option<String>,
+    #[serde(rename = "baseContent")]
+    pub base_content: Option<String>,
     #[serde(rename = "itemCategory")]
     pub item_category: Option<String>, // "1" 为系列活动
     
@@ -387,6 +393,172 @@ pub struct SecondClass {
     #[serde(flatten)]
     pub raw: Value,
 }
+
+// maybe more objects:
+// raw.pic : The header image URL: "https://young.ustc.edu.cn/login/{pic}"
+// (about department): as follows
+// An raw field example:
+/*
+{
+    "publicEndTime": null,
+    "examineStatusName": null,
+    "applyEt": "2025-12-21 18:45:00",
+    "enshrineNum": null,
+    "type": 1,
+    "examineStatus": 10,
+    "marathonDataStatus": null,
+    "sumHours": {
+        "source": "0.00",
+        "parsedValue": 0
+    },
+    "evaluation": 0,
+    "itemName": "“聆冬映雪”首届古琴音乐会",
+    "actionStatus": null,
+    "historyType": "000",
+    "review": "0",
+    "tel": "13167733518",
+    "stick": "1",
+    "id": "7697fe4c3f4a4b35c8f4e553a72fbc7f",
+    "evaluated": null,
+    "enshrine": null,
+    "backOaBudget": 0,
+    "itemLimitNum": null,
+    "sumPersons": 0,
+    "outlayDetail": null,
+    "module": "m",
+    "outlayMoney": {
+        "source": "7006.90",
+        "parsedValue": 7006.9
+    },
+    "createet": null,
+    "regRemarks": null,
+    "version": null,
+    "attaType": "",
+    "serviceHour": "2.0",
+    "qrSigninClosed": "0",
+    "auditTime": "2025-12-01 12:17:44",
+    "itemLable": "1296303965593841666",
+    "signInType": null,
+    "businessDeptName": "学生正则古琴协会",
+    "itemCategory": "0",
+    "hosting": "1",
+    "baseContentCountNum": null,
+    "signOutType": null,
+    "delFlag": 0,
+    "holdingPeriod": null,
+    "proposalId": null,
+    "examineStatus_dictText": "发布",
+    "marathonCampus": null,
+    "regPicUrls": null,
+    "auditAssistant": "",
+    "qdCourseStatus": null,
+    "identity": null,
+    "budgetList": null,
+    "showWininfo": "0",
+    "processType": 0,
+    "st": "2025-12-21 19:00:00",
+    "sponsor_dictText": "学生社团管理指导委员会",
+    "needPlaceApply": "1",
+    "qdClassId": null,
+    "regOptions": null,
+    "needSignInfo": "0",
+    "updateTime": "2025-12-03 11:15:39",
+    "applyNum": 0,
+    "delAudit": 1,
+    "canSubmitWork": false,
+    "uuidKey": null,
+    "businessDeptId": "4dcaf351b5c74a06b4503d219acb6280",
+    "teamSize": null,
+    "createTime": "2025-11-30 16:03:11",
+    "organizer": "4dcaf351b5c74a06b4503d219acb6280",
+    "isKnot": 0,
+    "registrationStatus": null,
+    "signInfo": 0,
+    "form_dictText": "现场参与",
+    "pid": "-1",
+    "pic": "group1/M00/2D/EA/wKgUEWkr9-aAbVjdAAFQ0EMsZQE288.jpg",
+    "baseContent": "&nbsp; &nbsp; &nbsp; &nbsp;时维亚岁，序属玄英。长至初阳生九地，葭灰始动；深庭素雪映冰弦，梅影将横。正则琴社谨以清商雅意，拟于冬至之夜（12月21日晚19:00），于东区水上报告厅，特备首届「聆冬映雪」古琴音乐会，邀诸君共赴林泉之约。 <br /><br />&nbsp; &nbsp; &nbsp; &nbsp;是夜也，炉暖松烟，窗含玉尘。《飞雪玉花》，启琼英之曼舞；《流水》 汤汤，写寒涧之幽淙。《平沙落雁》，寄遥思于霜浦；《良宵》 泠然，契冰心于月穹。更有《阳关三叠》，诉尽故人之谊；《酒狂》逸兴，抒怀物外之风。七弦吐纳，合天地之呼吸；宫商应和，通古今之消息。 <br /><br />&nbsp; &nbsp; &nbsp; &nbsp;琴社敬备种子门票一份，奉予诸君。愿君携归，植于案头盆内，待得东风吹拂，便可萌叶开花，以此冬日之清音，换彼春朝之烂漫。又设&ldquo;拈喜抽奖&rdquo;之趣，于中场暂歇之时，锦匣藏珍，待有缘者抽取，聊佐清欢，以志雅念。<br /><br />&nbsp; &nbsp; &nbsp; &nbsp;诚邀雅客，各携素心。扫竹径以迎鹤驾，煨芋炉而待清谈。愿借太古遗音，涤尘襟于三叠；且凭钧天妙响，寄幽思于九嶷。",
+    "putaway": "0",
+    "linkMan": "李孝诚",
+    "organizer_dictText": "学生正则古琴协会",
+    "totalServiceHour": null,
+    "stick_dictText": "已置顶",
+    "placeInfo": "东区水上报告厅",
+    "activityLevel": "school",
+    "processInstanceId": "51837123",
+    "applyTeamNum": null,
+    "libId": null,
+    "rangeDeptIds": null,
+    "marathon": null,
+    "qdClassIndex": null,
+    "peopleNum": 250,
+    "canGivenHours": false,
+    "modules": null,
+    "et": "2025-12-21 21:00:00",
+    "needPlaceApply_dictText": "需要",
+    "labelTo": null,
+    "lastApprovalMan": "P0812",
+    "isAuditAssistant": null,
+    "ewSponsor": "",
+    "itemStatus_dictText": "报名中",
+    "nj": "",
+    "applyStatus": 26,
+    "sponsor": "4f936144c0b84acc8793411121528c0d",
+    "workStatus_dictText": null,
+    "planningAtta": "group1/M00/2D/EA/wKgUEWkr-4yAbjkFAAB3NBaWmPY71.docx",
+    "isShowShare": 0,
+    "cancelSign": 0,
+    "itemPlaceDTO": {
+        "itemId": "7697fe4c3f4a4b35c8f4e553a72fbc7f",
+        "places": [
+            {
+                "itemId": null,
+                "placeSt": null,
+                "createBy": "PB23051008",
+                "createTime": 1764562739000,
+                "updateBy": "PB23051008",
+                "placeInfo": "东区水上报告厅",
+                "updateTime": 1764731737000,
+                "id": "39b36923262f251cf5385ba661444616",
+                "placeEt": null
+            }
+        ]
+    },
+    "conceive": "为&ldquo;跃动青春&rdquo;文艺季专项活动，12.21晚19:00在东区水上报告厅开展古琴演出，主要演出人员为社团成员、校内其他社团成员。",
+    "validHour": {
+        "source": "2.00",
+        "parsedValue": 2
+    },
+    "itemCategory_dictText": "单次项目",
+    "duration": {
+        "source": "2.0",
+        "parsedValue": 2
+    },
+    "businessDeptId_dictText": "学生正则古琴协会",
+    "updateBy": "PB23051008",
+    "itemStatus": 26,
+    "applySt": "2025-11-30 17:00:00",
+    "module_dictText": "美",
+    "teamNum": null,
+    "createst": null,
+    "qrSignoffClosed": "0",
+    "booleanRegistration": 0,
+    "workStatus": null,
+    "hours": null,
+    "conceiveCountNum": null,
+    "attaEndTime": null,
+    "activityLevel_dictText": "校级",
+    "budgetProjectId": null,
+    "createBy": "PB23051008",
+    "form": "0",
+    "applyWay": null,
+    "needApply": "1",
+    "xq": null,
+    "departTo": null,
+    "applyRange": "0",
+    "partakeNum": 0
+}
+*/
 
 impl SecondClass {
     pub fn status(&self) -> Status { Status::from(self.status_code) }
@@ -424,7 +596,7 @@ impl SecondClass {
     pub fn module(&self) -> Option<Module> {
         Some(Module {
             value: self.raw.get("module")?.as_str()?.to_string(),
-            text: self.raw.get("moduleName")?.as_str()?.to_string(),
+            text: self.raw.get("module_dictText")?.as_str()?.to_string(),
         })
     }
 
@@ -472,12 +644,10 @@ impl SecondClass {
     }
 
     // === 内部辅助 fetch ===
-    // 对应 Python: _fetch
     async fn fetch(service: &YouthService, filter: &SCFilter, url: &str, size: i32) -> Result<Vec<SecondClass>> {
         let raw_list = service.page_search(url, filter.to_params(), -1, size).await?;
         let mut result = Vec::new();
         for v in raw_list {
-            // println!("Fetched SC raw: {:?}", v);
             let sc: SecondClass = serde_json::from_value(v)?;
             if filter.check(&sc, true) {
                 result.push(sc);
@@ -497,10 +667,6 @@ impl SecondClass {
         if max == 0 { return Ok(vec![]); }
         
         let endpoint = if apply_ended { "item/scItem/endList" } else { "item/scItem/enrolmentList" };
-        
-        // Python中是流式 yield，Rust这里为了简单先全量获取当前页，然后 process
-        // 如果要完全复刻 Python 的 page_search 边搜边 yield，需要 Rust Stream，这会增加复杂度。
-        // 这里我们复用 page_search (它已经是一次性拿回结果了)，然后手动处理 expand
         
         // 1. 获取基础列表
         let base_list = Self::fetch(service, &filter, endpoint, 20).await?;
@@ -534,10 +700,9 @@ impl SecondClass {
         Ok(result)
     }
     
-    // ... (apply, update, get_participated 等保持不变) ...
     pub async fn get_participated(service: &YouthService) -> Result<Vec<SecondClass>> {
         let url = "item/scParticipateItem/list";
-        let raw = service.page_search(url, json!({}), 20, 20).await?;
+        let raw = service.page_search(url, json!({}), -1, 20).await?;
         let list = raw.into_iter().map(|v| serde_json::from_value(v)).collect::<Result<Vec<_>,_>>()?;
         Ok(list)
     }

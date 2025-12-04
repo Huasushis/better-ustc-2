@@ -60,9 +60,7 @@ impl YouthService {
         })
     }
 
-    // ... (encrypt 方法保持不变) ...
     fn encrypt(&self, data: &Value, timestamp: u64) -> Result<String> {
-        // ... (保持原有的加密逻辑) ...
         let token_len = self.access_token.len();
         let key_start = token_len.saturating_sub(16);
         let key_str = &self.access_token[key_start..];
@@ -101,7 +99,6 @@ impl YouthService {
         Ok(general_purpose::STANDARD.encode(buffer))
     }
 
-    // ... (request 方法保持不变) ...
     pub async fn request(&self, endpoint: &str, method: &str, params: Option<Value>, json_body: Option<Value>) -> Result<Value> {
         let timestamp = SystemTime::now().duration_since(UNIX_EPOCH)?.as_millis() as u64;
         let url = generate_url("young", &format!("login/wisdom-group-learning-bg/{}", endpoint));
@@ -144,7 +141,6 @@ impl YouthService {
         Err(last_error)
     }
 
-    // ... (page_search 方法保持不变，但可以使用 get_result 简化) ...
     pub async fn page_search(&self, url: &str, params: Value, max: i32, size: i32) -> Result<Vec<Value>> {
         let mut results = Vec::new();
         let mut page = 1;
@@ -157,7 +153,6 @@ impl YouthService {
             params["pageNo"] = json!(page);
             params["pageSize"] = json!(size);
 
-            // 这里改用 get_result
             let res = self.get_result(url, Some(params.clone())).await?;
             
             let records = res["records"].as_array().context("Response missing records")?;
