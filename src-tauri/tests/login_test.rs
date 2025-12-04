@@ -12,7 +12,7 @@ async fn test_login_and_get_info() {
     // 3. 尝试登录 (如果环境变量没设，这里会报错)
     println!("Starting login...");
     let login_result = client.login_by_pwd(None, None).await;
-    
+
     match login_result {
         Ok(_) => println!("Login successfully!"),
         Err(e) => panic!("Login failed: {:?}", e),
@@ -32,7 +32,7 @@ async fn test_login_and_get_info() {
             println!("Name: {}", user_info.name);
             println!("GID: {}", user_info.gid);
             println!("Email: {:?}", user_info.email);
-        },
+        }
         Err(e) => panic!("Failed to get info: {:?}", e),
     }
 }
