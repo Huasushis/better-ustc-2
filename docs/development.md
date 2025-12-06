@@ -1,6 +1,6 @@
 # Better-USTC-2 开发文档
 
-![Better-USTC-2](/logo.png) <!-- 请将此处的 logo.png 替换为你们的 Logo 图片路径 -->
+![Better-USTC-2](/logo.png)
 
 **Better-USTC-2** 是一个旨在优化中国科学技术大学“第二课堂”平台的移动端应用项目。我们致力于通过现代化的技术栈和智能推荐算法，为同学们提供更便捷、更个性化的二课活动体验。
 
@@ -78,21 +78,24 @@
 
 ## ⚙️ API 设计 & 数据结构
 
-应用前后端通过 Tauri 的 `invoke` 机制进行通信。后端 Rust 函数暴露给前端调用。
+应用前后端通过 Tauri 的 `invoke` 机制进行通信。后端 Rust 函数暴露给前端调用，详细字段说明见 [`docs/backend.md`](./backend.md)。
 
 ### 后端核心函数 (Rust -> Tauri Commands)
 
 | 函数名 | 参数 | 返回值 | 描述 |
 | :--- | :--- | :--- | :--- |
-| `login` | `username: String`, `password: String` | `Result<bool, String>` | 接收用户账号密码进行登录，加密存储。返回成功或失败信息。 |
-| `get_login_status` | - | `Result<UserInfo, String>` | 检查当前登录状态，若已登录则返回用户信息。 |
-| `get_class_schedule` | - | `Result<Json, String>` | 爬取并返回当前学期的课表数据。 |
-| `get_unregistered_activities` | - | `Result<Json, String>` | 获取所有可报名的二课活动列表。 |
-| `get_registered_activities` | - | `Result<Json, String>` | 获取已报名但未参加的活动列表。 |
-| `get_participated_activities` | - | `Result<Json, String>` | 获取已参加的活动列表。 |
-| `get_pending_appeals` | - | `Result<Json, String>` | 获取待学时申诉的项目列表。 |
-| `register_for_activity` | `activity_id: String` | `Result<bool, String>` | 报名指定的二课活动。 |
-| `get_recommended_activities` | - | `Result<Json, String>` | 根据用户画像返回个性化推荐的活动列表。 |
+| `login` | `username: String`, `password: String`, `save: bool` | `Result<serde_json::Value, String>` | 登录 CAS + 二课，`save` 时将密码按机器密钥加密落盘；错误返回 JSON 字符串 `{code,message}`。 |
+| `get_login_status` | - | `Result<serde_json::Value, String>` | 检查当前登录状态；若有本地密文会尝试自动登录，返回 `logged_in/has_stored_creds/username/user`。 |
+| `logout` | - | `Result<(), String>` | 清空内存会话并删除存储的密码（用户名保留）。 |
+| `refresh_session` | - | `Result<serde_json::Value, String>` | 在 Cookie 有效的情况下刷新 YouthService 并重新获取用户信息。 |
+| `get_unended_activities` | - | `Result<serde_json::Value, String>` | 未结束的活动列表。 |
+| `get_registered_activities` | - | `Result<serde_json::Value, String>` | 已报名/报名已结束的活动。 |
+| `get_participated_activities` | - | `Result<serde_json::Value, String>` | 已参加/已结项的活动。 |
+| `register_for_activity` | `activity_id: String` | `Result<bool, String>` | 报名指定活动，必要时获取报名信息并处理时间冲突的自动取消。 |
+| `get_recommended_activities` | - | `Result<serde_json::Value, String>` | 基于历史参与的简单推荐列表。 |
+| `get_activity_children` | `activity_id: String` | `Result<serde_json::Value, String>` | 系列课子项目，非系列课返回错误 JSON。 |
+| `get_class_schedule` | - | `Result<serde_json::Value, String>` | 占位实现，当前返回空数组。 |
+| `get_pending_appeals` | - | `Result<serde_json::Value, String>` | 占位实现，当前返回空数组。 |
 
 ### 登录实现
 
@@ -165,7 +168,7 @@
 - `message`: 面向用户的可本地化文案（默认中文，可根据需要做 i18n）。
 - `details`: 可选的附加数据，供前端做更细化的逻辑（不用于直接展示）。
 
-### 推荐错误码列表
+### *推荐错误码列表 (未实现)
 
 | 领域 | 错误码 | 场景说明 | 前端建议处理 |
 | --- | --- | --- | --- |
@@ -188,7 +191,7 @@
 | 安全 | `ENCRYPT_FAIL` | 加密/解密用户凭据失败 | 强制登出并要求重新登录 |
 | 课表 | `SCHEDULE_EMPTY` | 当前时间段无课表数据 | 展示空态 |
 
-### Rust 实现示例
+### *Rust 实现示例 (TODO)
 
 ```rust
 use serde::Serialize;
@@ -222,7 +225,7 @@ async fn login(username: String, password: String) -> Result<bool, String> {
 }
 ```
 
-### 前端处理建议
+### *前端处理建议 (TODO)
 
 ```ts
 interface ApiError {

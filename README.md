@@ -3,7 +3,7 @@
 ![last commit](https://img.shields.io/github/last-commit/huasushis/better-ustc-2)
 [![commits since last release](https://img.shields.io/github/commits-since/huasushis/better-ustc-2/latest.svg)](https://github.com/huasushis/better-ustc-2)
 
-![Better-USTC-2](/logo.png) <!-- 请将此处的 logo.png 替换为你们的 Logo 图片路径 -->
+![Better-USTC-2](/logo.png)
 
 Better-USTC-2 是一个面向 Android 的移动应用，目标是优化中国科学技术大学“第二课堂”平台的使用体验（推荐机制 + 活动提醒与报名）。
 
@@ -83,11 +83,10 @@ pnpm tauri android build
 
 ## 文档
 
-更详细的[开发文档](/docs/development.md)（API、数据结构与开发规范）请查看：
+更详细的开发与后端文档：
 
-```
-docs/development.md
-```
+- `docs/development.md`：整体开发流程与接口列表
+- `docs/backend.md`：Rust/Tauri 后端模块、命令说明与安全注意事项
 
 ---
 
