@@ -8,7 +8,6 @@ pub mod auth;
 use std::sync::Arc;
 use tauri::{AppHandle, State};
 use serde_json::json;
-// use chrono::Local;
 use crate::state::AppState;
 use crate::rustustc::young::{YouthService, SecondClass, SCFilter};
 use crate::recommend::Recommender;
@@ -37,6 +36,7 @@ pub fn run() {
             get_participated_activities,
             register_for_activity,
             get_recommended_activities,
+            get_activity_children,
             get_class_schedule,
             get_pending_appeals
         ])
@@ -200,6 +200,41 @@ async fn get_recommended_activities(state: State<'_, AppState>) -> Result<serde_
     let rec_list = Recommender::recommend(&service, 10).await.map_err(map_err)?;
     Ok(json!(rec_list))
 }
+
+#[tauri::command]
+async fn get_activity_children(
+    state: State<'_, AppState>, 
+    activity_id: String
+) -> Result<serde_json::Value, String> {
+    let service = get_service(&state).await?;
+    
+    // 1. 构造一个只有 ID 的对象
+    let mut sc = SecondClass {
+        id: activity_id,
+        name: "".into(), status_code: 0, valid_hour: None, apply_num: None, apply_limit: None,
+        boolean_registration: None, need_sign_info_str: None, conceive: None, base_content: None, item_category: None,
+        create_time_str: None, apply_start: None, apply_end: None, start_time: None, end_time: None,
+        tel: None, raw: serde_json::Value::Null,
+    };
+
+    // 2. 更新详情 (这一步是为了获取 is_series 标志，以及确保 ID 有效)
+    sc.update(&service).await.map_err(map_err)?;
+
+    if !sc.is_series() {
+        return Err(json!({
+            "code": "NOT_A_SERIES",
+            "message": "The specified activity is not a series activity."
+        }).to_string());
+    }
+
+    // 3. 获取子项目
+    // 注意：get_children 内部会检查 is_series()，如果不是系列课会返回空列表
+    let children = sc.get_children(&service).await.map_err(map_err)?;
+
+    Ok(json!(children))
+}
+
+//TODO
 
 #[tauri::command]
 async fn get_class_schedule() -> Result<serde_json::Value, String> { Ok(json!([])) }
