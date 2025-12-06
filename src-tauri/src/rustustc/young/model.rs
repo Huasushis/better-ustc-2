@@ -603,7 +603,15 @@ impl SecondClass {
     pub fn department(&self) -> Option<Department> {
         Some(Department {
             id: self.raw.get("businessDeptId")?.as_str()?.to_string(),
-            name: self.raw.get("businessDeptName")?.as_str()?.to_string(),
+            //businessDeptId_dictText, businessDeptName, bussinessDeptName choose one not none
+            // name: self.raw.get("businessDeptName")?.as_str()?.to_string(),
+            // how can I implement it?
+            // Try businessDeptId_dictText first, then businessDeptName, then bussinessDeptName
+            name: ["businessDeptId_dictText", "businessDeptName", "bussinessDeptName"]
+                .iter()
+                .find_map(|&key| self.raw.get(key).and_then(|v| v.as_str()))
+                .unwrap_or_default()
+                .to_string(),
             children: vec![],
             level: -1,
         })
