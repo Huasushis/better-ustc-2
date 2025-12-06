@@ -61,6 +61,7 @@ impl YouthService {
     }
 
     fn encrypt(&self, data: &Value, timestamp: u64) -> Result<String> {
+        // Token 末尾 32 字符被切分为 key+iv（各 16 字节）；若后端变更 token 长度，这里将 panic，建议未来显式校验长度并返回友好错误。
         let token_len = self.access_token.len();
         let key_start = token_len.saturating_sub(16);
         let key_str = &self.access_token[key_start..];

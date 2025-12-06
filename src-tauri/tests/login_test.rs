@@ -2,6 +2,7 @@ use better_ustc_2_lib::rustustc::cas::client::CASClient;
 use dotenv::dotenv;
 
 #[tokio::test]
+#[ignore = "requires real USTC CAS credentials and network access"]
 async fn test_login_and_get_info() {
     // 1. 加载 .env 文件中的环境变量
     dotenv().ok();

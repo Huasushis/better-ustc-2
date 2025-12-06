@@ -59,6 +59,9 @@ async fn get_service(state: &State<'_, AppState>) -> Result<Arc<YouthService>, S
 
 // ==================== 登录相关 (调用 auth 模块) ====================
 
+/// CAS + 二课登录。
+/// - `save=true` 时将账号/密文密码写入插件存储，密钥来源 machine_uid。
+/// - 错误统一包装为 `{code,message}` JSON 字符串，前端需先尝试 JSON.parse。
 #[tauri::command]
 async fn login(
     app: AppHandle,
@@ -80,6 +83,7 @@ async fn login(
     Ok(json!(user_info))
 }
 
+/// 查询登录状态：优先复用内存会话，否则尝试读取磁盘密文自动登录。
 #[tauri::command]
 async fn get_login_status(
     app: AppHandle,
@@ -103,6 +107,7 @@ async fn get_login_status(
     }
 }
 
+/// 清空会话并删除存储的密码（用户名保留，便于自动填充）。
 #[tauri::command]
 async fn logout(app: AppHandle, state: State<'_, AppState>) -> Result<(), String> {
     *state.cas_client.lock().await = None;
@@ -111,6 +116,7 @@ async fn logout(app: AppHandle, state: State<'_, AppState>) -> Result<(), String
     Ok(())
 }
 
+/// 使用当前 CAS Cookie 刷新 YouthService。若 Cookie 失效会返回错误 JSON。
 #[tauri::command]
 async fn refresh_session(state: State<'_, AppState>) -> Result<serde_json::Value, String> {
     let cas_guard = state.cas_client.lock().await;
@@ -140,6 +146,7 @@ async fn refresh_session(state: State<'_, AppState>) -> Result<serde_json::Value
 
 // ==================== 二课活动相关 (修改筛选逻辑) ====================
 
+/// 获取未结束的活动列表（不展开系列课）。
 #[tauri::command]
 async fn get_unended_activities(state: State<'_, AppState>) -> Result<serde_json::Value, String> {
     let service = get_service(&state).await?;
@@ -149,6 +156,7 @@ async fn get_unended_activities(state: State<'_, AppState>) -> Result<serde_json
     Ok(json!(activities))
 }
 
+/// 获取已报名 / 报名已结束的活动。
 #[tauri::command]
 async fn get_registered_activities(state: State<'_, AppState>) -> Result<serde_json::Value, String> {
     let service = get_service(&state).await?;
@@ -165,6 +173,7 @@ async fn get_registered_activities(state: State<'_, AppState>) -> Result<serde_j
     Ok(json!(registered_activities))
 }
 
+/// 获取已参与/已结项的活动。
 #[tauri::command]
 async fn get_participated_activities(state: State<'_, AppState>) -> Result<serde_json::Value, String> {
     let service = get_service(&state).await?;
@@ -179,6 +188,7 @@ async fn get_participated_activities(state: State<'_, AppState>) -> Result<serde
     Ok(json!(finished))
 }
 
+/// 报名指定活动；会先更新详情再 apply，必要时自动取消冲突活动后重试。
 #[tauri::command]
 async fn register_for_activity(state: State<'_, AppState>, activity_id: String) -> Result<bool, String> {
     let service = get_service(&state).await?;
@@ -194,6 +204,7 @@ async fn register_for_activity(state: State<'_, AppState>, activity_id: String) 
     sc.apply(&service, false, true, None).await.map_err(map_err)
 }
 
+/// 基于历史参与记录的简单推荐（TF/部门/模块加权）。
 #[tauri::command]
 async fn get_recommended_activities(state: State<'_, AppState>) -> Result<serde_json::Value, String> {
     let service = get_service(&state).await?;
@@ -201,6 +212,7 @@ async fn get_recommended_activities(state: State<'_, AppState>) -> Result<serde_
     Ok(json!(rec_list))
 }
 
+/// 获取系列课的子项目；非系列课返回 `NOT_A_SERIES` 错误。
 #[tauri::command]
 async fn get_activity_children(
     state: State<'_, AppState>, 

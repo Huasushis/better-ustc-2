@@ -205,6 +205,7 @@ impl SCFilter {
             }
         }
 
+        if !self.fuzzy_name && sc.name != self.name { return false; }
         if let Some(period) = &self.time_period {
             if let Ok(ht) = sc.hold_time() {
                 if self.strict_time {

@@ -6,6 +6,7 @@ use dotenv::dotenv;
 use serde_json::json;
 
 #[tokio::test]
+#[ignore = "requires real USTC CAS credentials and network access"]
 async fn test_young_full_flow() {
     dotenv().ok();
 
