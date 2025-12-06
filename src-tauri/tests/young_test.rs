@@ -1,6 +1,7 @@
 use better_ustc_2_lib::rustustc::cas::client::CASClient;
 use better_ustc_2_lib::rustustc::young::model::Department;
 use better_ustc_2_lib::rustustc::young::{SCFilter, SecondClass, YouthService};
+use better_ustc_2_lib::recommend::Recommender;
 use dotenv::dotenv;
 use serde_json::json;
 
@@ -54,7 +55,8 @@ async fn test_young_full_flow() {
     .expect("Search failed");
 
     println!("Found {} courses:", courses.len());
-    for course in &courses {
+    for mut course in courses {
+        course.update(&young).await.expect("Update failed");
         println!(
             " - [{}] {} (Status: {})",
             course.id,
@@ -69,6 +71,14 @@ async fn test_young_full_flow() {
         if let Ok(time) = course.hold_time() {
             println!("   Time: {} ~ {}", time.start, time.end);
         }
+        if let Some(module) = course.module() {
+            println!("   Module: {}", module.value);
+        }
+        if let Some(popularity) = course.apply_num {
+            println!("   Applied by {} users", popularity);
+        }
+        //print raw
+        // println!("   Raw: {}", course.raw);
     }
 
     // 5. 获取已参与的课程
@@ -88,5 +98,15 @@ async fn test_young_full_flow() {
                 course.valid_hour.unwrap_or(0.0)
             );
         }
+    }
+
+    //6. Get recommended courses
+    println!("\nGetting recommended courses (Limit 5)...");
+    let recommended = Recommender::recommend(&young, 5)
+        .await
+        .expect("Recommendation failed");
+    println!("Recommended {} courses:", recommended.len());
+    for course in &recommended {
+        println!(" - [{}] {}", course.id, course.name);
     }
 }
