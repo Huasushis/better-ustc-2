@@ -113,6 +113,12 @@ docs/development.md
 
 - [TF-IDF 算法](https://developer.aliyun.com/article/1155198)
 
+- [基于余弦相似性算法的相似度分析](https://www.cnblogs.com/longkui-site/p/18765995)
+
+- [Crate ammonia](https://docs.rs/ammonia/latest/ammonia/)
+
+
+
 ## 使用过的 AI 助手
 
 - [通义千问](https://www.qianwen.com)：代码支持
