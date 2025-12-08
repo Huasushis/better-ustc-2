@@ -1,6 +1,6 @@
 use better_ustc_2_lib::rustustc::url::generate_url;
-use better_ustc_2_lib::rustustc::young::{SCFilter, SecondClass, Status};
 use better_ustc_2_lib::rustustc::young::model::{Label, Module, TimePeriod};
+use better_ustc_2_lib::rustustc::young::{SCFilter, SecondClass, Status};
 use chrono::NaiveDateTime;
 use serde_json::json;
 
@@ -70,9 +70,18 @@ fn scfilter_check_and_applyable() {
     assert!(filter.check(&activity, false));
 
     // 模块与标签匹配
-    let filter = SCFilter { fuzzy_name: true, ..SCFilter::new() }
-        .module(Module { value: "m".into(), text: "美".into() })
-        .add_label(Label { id: "lab1".into(), name: "社团".into() });
+    let filter = SCFilter {
+        fuzzy_name: true,
+        ..SCFilter::new()
+    }
+    .module(Module {
+        value: "m".into(),
+        text: "美".into(),
+    })
+    .add_label(Label {
+        id: "lab1".into(),
+        name: "社团".into(),
+    });
     assert!(filter.check(&activity, false));
 
     // 时间段严格包含：活动在 18-20 点，过滤 17-21 点应通过
@@ -81,7 +90,12 @@ fn scfilter_check_and_applyable() {
         NaiveDateTime::parse_from_str("2024-02-10 21:00:00", "%Y-%m-%d %H:%M:%S").unwrap(),
     )
     .unwrap();
-    let filter = SCFilter { fuzzy_name: true, strict_time: true, time_period: Some(time_filter.clone()), ..SCFilter::default() };
+    let filter = SCFilter {
+        fuzzy_name: true,
+        strict_time: true,
+        time_period: Some(time_filter.clone()),
+        ..SCFilter::default()
+    };
     let ht = activity.hold_time().expect("hold_time should parse");
     assert!(time_filter.is_contain(&ht));
     assert!(filter.check(&activity, true));

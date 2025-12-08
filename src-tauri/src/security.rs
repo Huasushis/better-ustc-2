@@ -1,18 +1,23 @@
 use aes_gcm::{
     aead::{Aead, KeyInit},
-    Aes256Gcm, Nonce
+    Aes256Gcm, Nonce,
 };
+use anyhow::{Context, Result};
+use rand::{thread_rng, RngCore};
+use sha2::{Digest, Sha256};
 use tauri::AppHandle;
-use sha2::{Sha256, Digest};
 use tauri_plugin_machine_uid::MachineUidExt;
-use rand::{RngCore, thread_rng};
-use anyhow::{Result, Context};
 
 /// 获取基于机器特征的固定 32 字节密钥
 fn get_machine_key(app: &AppHandle) -> Result<[u8; 32]> {
     // 获取机器唯一 ID (如果获取失败，使用一个固定的 fallback，虽然安全性降低但保证可用性)
-    let machine_id = app.machine_uid().get_machine_uid().unwrap().id.unwrap_or_else(|| "IDONTKNOWWHATTOWRITEDOWNHERE".to_string());
-    
+    let machine_id = app
+        .machine_uid()
+        .get_machine_uid()
+        .unwrap()
+        .id
+        .unwrap_or_else(|| "IDONTKNOWWHATTOWRITEDOWNHERE".to_string());
+
     // 加上一个硬编码的 Salt，防止彩虹表
     let salt = "BETTER_USTC_SALT_2025";
     let combined = format!("{}{}", machine_id, salt);
@@ -21,7 +26,7 @@ fn get_machine_key(app: &AppHandle) -> Result<[u8; 32]> {
     let mut hasher = Sha256::new();
     hasher.update(combined.as_bytes());
     let result = hasher.finalize();
-    
+
     let mut key = [0u8; 32];
     key.copy_from_slice(&result);
     Ok(key)
@@ -38,7 +43,8 @@ pub fn encrypt_data(app: &AppHandle, plaintext: &str) -> Result<String> {
     thread_rng().fill_bytes(&mut nonce_bytes);
     let nonce = Nonce::from_slice(&nonce_bytes);
 
-    let ciphertext = cipher.encrypt(nonce, plaintext.as_bytes())
+    let ciphertext = cipher
+        .encrypt(nonce, plaintext.as_bytes())
         .map_err(|e| anyhow::anyhow!("Encryption failed: {}", e))?;
 
     let nonce_hex = hex::encode(nonce_bytes);
@@ -65,7 +71,8 @@ pub fn decrypt_data(app: &AppHandle, encrypted_str: &str) -> Result<String> {
     let cipher = Aes256Gcm::new(&key_bytes.into());
     let nonce = Nonce::from_slice(&nonce_bytes);
 
-    let plaintext_bytes = cipher.decrypt(nonce, ciphertext_bytes.as_ref())
+    let plaintext_bytes = cipher
+        .decrypt(nonce, ciphertext_bytes.as_ref())
         .map_err(|e| anyhow::anyhow!("Decryption failed (Wrong machine?): {}", e))?;
 
     let plaintext = String::from_utf8(plaintext_bytes)?;

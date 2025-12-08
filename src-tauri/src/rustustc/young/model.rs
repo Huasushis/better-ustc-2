@@ -1,8 +1,8 @@
+use crate::rustustc::young::service::YouthService;
+use anyhow::{bail, Context, Result};
+use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
-use anyhow::{Result, Context, bail};
-use chrono::NaiveDateTime;
-use crate::rustustc::young::service::YouthService;
 
 // ==================== 基础类型定义 (TimePeriod) ====================
 
@@ -21,8 +21,7 @@ impl TimePeriod {
     }
 
     pub fn parse(s: &str) -> Result<NaiveDateTime> {
-        NaiveDateTime::parse_from_str(s, "%Y-%m-%d %H:%M:%S")
-            .context("Failed to parse datetime")
+        NaiveDateTime::parse_from_str(s, "%Y-%m-%d %H:%M:%S").context("Failed to parse datetime")
     }
 
     pub fn parse_period(start_str: &str, end_str: Option<&str>) -> Result<Self> {
@@ -50,11 +49,13 @@ impl TimePeriod {
 pub trait Tag: Sized {
     fn get_url() -> &'static str;
     fn from_dict(data: Value) -> Result<Self>;
-    
+
     async fn get_available_tags(service: &YouthService) -> Result<Vec<Self>> {
         let raw_list = service.get_result(Self::get_url(), None).await?;
-        let list_val = raw_list.as_array().context("API response is not an array")?;
-        
+        let list_val = raw_list
+            .as_array()
+            .context("API response is not an array")?;
+
         let mut tags = Vec::new();
         for v in list_val {
             tags.push(Self::from_dict(v.clone())?);
@@ -71,7 +72,9 @@ pub struct Module {
 
 #[async_trait::async_trait]
 impl Tag for Module {
-    fn get_url() -> &'static str { "sys/dict/getDictItems/item_module" }
+    fn get_url() -> &'static str {
+        "sys/dict/getDictItems/item_module"
+    }
     fn from_dict(data: Value) -> Result<Self> {
         Ok(Self {
             value: data["value"].as_str().unwrap_or_default().to_string(),
@@ -95,14 +98,19 @@ impl Department {
     fn from_dict_recursive(data: Value, level: i32) -> Result<Self> {
         let id = data["id"].as_str().unwrap_or_default().to_string();
         let name = data["departName"].as_str().unwrap_or_default().to_string();
-        
+
         let mut children = Vec::new();
         if let Some(child_arr) = data.get("children").and_then(|c| c.as_array()) {
             for c in child_arr {
                 children.push(Self::from_dict_recursive(c.clone(), level + 1)?);
             }
         }
-        Ok(Self { id, name, children, level })
+        Ok(Self {
+            id,
+            name,
+            children,
+            level,
+        })
     }
 
     pub async fn get_root_dept(service: &YouthService) -> Result<Self> {
@@ -131,7 +139,9 @@ impl Department {
 
 #[async_trait::async_trait]
 impl Tag for Department {
-    fn get_url() -> &'static str { "sysdepart/sysDepart/queryTreeList" }
+    fn get_url() -> &'static str {
+        "sysdepart/sysDepart/queryTreeList"
+    }
     fn from_dict(data: Value) -> Result<Self> {
         Self::from_dict_recursive(data, 0)
     }
@@ -145,7 +155,9 @@ pub struct Label {
 
 #[async_trait::async_trait]
 impl Tag for Label {
-    fn get_url() -> &'static str { "paramdesign/scLabel/queryListLabel" }
+    fn get_url() -> &'static str {
+        "paramdesign/scLabel/queryListLabel"
+    }
     fn from_dict(data: Value) -> Result<Self> {
         Ok(Self {
             id: data["id"].as_str().unwrap_or_default().to_string(),
@@ -168,19 +180,45 @@ pub struct SCFilter {
 }
 
 impl SCFilter {
-    pub fn new() -> Self { Self::default() }
-    pub fn name(mut self, name: &str) -> Self { self.name = name.to_string(); self }
-    pub fn module(mut self, module: Module) -> Self { self.module = Some(module); self }
-    pub fn department(mut self, dept: Department) -> Self { self.department = Some(dept); self }
-    pub fn time_period(mut self, period: TimePeriod) -> Self { self.time_period = Some(period); self }
-    pub fn strict_time(mut self, strict: bool) -> Self { self.strict_time = strict; self }
-    pub fn add_label(mut self, label: Label) -> Self { self.labels.push(label); self }
+    pub fn new() -> Self {
+        Self::default()
+    }
+    pub fn name(mut self, name: &str) -> Self {
+        self.name = name.to_string();
+        self
+    }
+    pub fn module(mut self, module: Module) -> Self {
+        self.module = Some(module);
+        self
+    }
+    pub fn department(mut self, dept: Department) -> Self {
+        self.department = Some(dept);
+        self
+    }
+    pub fn time_period(mut self, period: TimePeriod) -> Self {
+        self.time_period = Some(period);
+        self
+    }
+    pub fn strict_time(mut self, strict: bool) -> Self {
+        self.strict_time = strict;
+        self
+    }
+    pub fn add_label(mut self, label: Label) -> Self {
+        self.labels.push(label);
+        self
+    }
 
     pub fn to_params(&self) -> Value {
         let mut params = json!({});
-        if !self.name.is_empty() { params["itemName"] = json!(self.name); }
-        if let Some(m) = &self.module { params["module"] = json!(m.value); }
-        if let Some(d) = &self.department { params["businessDeptId"] = json!(d.id); }
+        if !self.name.is_empty() {
+            params["itemName"] = json!(self.name);
+        }
+        if let Some(m) = &self.module {
+            params["module"] = json!(m.value);
+        }
+        if let Some(d) = &self.department {
+            params["businessDeptId"] = json!(d.id);
+        }
         if !self.labels.is_empty() {
             let ids: Vec<String> = self.labels.iter().map(|l| l.id.clone()).collect();
             params["itemLable"] = json!(ids.join(","));
@@ -190,28 +228,48 @@ impl SCFilter {
 
     pub fn check(&self, sc: &SecondClass, only_strict: bool) -> bool {
         if !only_strict {
-            if self.fuzzy_name && !sc.name.to_lowercase().contains(&self.name.to_lowercase()) { return false; }
-            if !self.fuzzy_name && sc.name != self.name { return false; }
-            
+            if self.fuzzy_name && !sc.name.to_lowercase().contains(&self.name.to_lowercase()) {
+                return false;
+            }
+            if !self.fuzzy_name && sc.name != self.name {
+                return false;
+            }
+
             if let (Some(m), Some(sc_m)) = (&self.module, sc.module()) {
-                if sc_m.value != m.value { return false; }
+                if sc_m.value != m.value {
+                    return false;
+                }
             }
             if let (Some(d), Some(sc_d)) = (&self.department, sc.department()) {
-                if sc_d.id != d.id { return false; }
+                if sc_d.id != d.id {
+                    return false;
+                }
             }
             if !self.labels.is_empty() {
                 let sc_labels = sc.labels();
-                if !self.labels.iter().any(|t| sc_labels.iter().any(|s| s.id == t.id)) { return false; }
+                if !self
+                    .labels
+                    .iter()
+                    .any(|t| sc_labels.iter().any(|s| s.id == t.id))
+                {
+                    return false;
+                }
             }
         }
 
-        if !self.fuzzy_name && sc.name != self.name { return false; }
+        if !self.fuzzy_name && sc.name != self.name {
+            return false;
+        }
         if let Some(period) = &self.time_period {
             if let Ok(ht) = sc.hold_time() {
                 if self.strict_time {
-                    if !period.is_contain(&ht) { return false; }
+                    if !period.is_contain(&ht) {
+                        return false;
+                    }
                 } else {
-                    if !period.is_overlap(&ht) { return false; }
+                    if !period.is_overlap(&ht) {
+                        return false;
+                    }
                 }
             }
         }
@@ -241,7 +299,9 @@ pub struct User {
 
 impl User {
     pub async fn get_phone(&mut self, service: &YouthService) -> Result<Option<String>> {
-        if self.phone.is_some() { return Ok(self.phone.clone()); }
+        if self.phone.is_some() {
+            return Ok(self.phone.clone());
+        }
         let url = "sys/user/querySysUser";
         let params = json!({ "username": self.id });
         match service.get_result(url, Some(params)).await {
@@ -250,26 +310,45 @@ impl User {
                 let p = v["phone"].as_str().map(|s| s.to_string());
                 self.phone = p.clone();
                 Ok(p)
-            },
-            Err(e) if e.to_string().contains("验证失败") => { self.phone = None; Ok(None) },
+            }
+            Err(e) if e.to_string().contains("验证失败") => {
+                self.phone = None;
+                Ok(None)
+            }
             Err(e) => Err(e),
         }
     }
 
     pub async fn get_current(service: &YouthService) -> Result<Self> {
-        let info = service.get_result("paramdesign/scMyInfo/info", None).await?;
+        let info = service
+            .get_result("paramdesign/scMyInfo/info", None)
+            .await?;
         let id = info["username"].as_str().context("Missing username")?;
         let phone = info["phone"].as_str().map(|s| s.to_string());
-        let mut user = Self::find(service, id, 2, 2).await?.into_iter().next().context("Failed to find self user info")?;
-        if let Some(p) = phone { user.phone = Some(p); }
+        let mut user = Self::find(service, id, 2, 2)
+            .await?
+            .into_iter()
+            .next()
+            .context("Failed to find self user info")?;
+        if let Some(p) = phone {
+            user.phone = Some(p);
+        }
         Ok(user)
     }
 
-    pub async fn find(service: &YouthService, name_or_id: &str, max: i32, size: i32) -> Result<Vec<User>> {
+    pub async fn find(
+        service: &YouthService,
+        name_or_id: &str,
+        max: i32,
+        size: i32,
+    ) -> Result<Vec<User>> {
         let url = "sys/user/getPersonInChargeUser";
         let params = json!({ "realname": name_or_id });
         let raw = service.page_search(url, params, max, size).await?;
-        Ok(raw.into_iter().map(|v| serde_json::from_value(v)).collect::<Result<Vec<_>, _>>()?)
+        Ok(raw
+            .into_iter()
+            .map(|v| serde_json::from_value(v))
+            .collect::<Result<Vec<_>, _>>()?)
     }
 }
 
@@ -314,7 +393,9 @@ pub enum Status {
 }
 
 impl Status {
-    pub fn code(&self) -> i32 { *self as i32 }
+    pub fn code(&self) -> i32 {
+        *self as i32
+    }
     pub fn text(&self) -> &'static str {
         match self {
             Status::Applying => "报名中",
@@ -375,7 +456,7 @@ pub struct SecondClass {
     pub base_content: Option<String>,
     #[serde(rename = "itemCategory")]
     pub item_category: Option<String>, // "1" 为系列活动
-    
+
     // Time
     #[serde(rename = "createTime")]
     pub create_time_str: Option<String>,
@@ -562,18 +643,26 @@ pub struct SecondClass {
 */
 
 impl SecondClass {
-    pub fn status(&self) -> Status { Status::from(self.status_code) }
+    pub fn status(&self) -> Status {
+        Status::from(self.status_code)
+    }
 
     pub fn create_time(&self) -> Result<NaiveDateTime> {
         TimePeriod::parse(self.create_time_str.as_deref().unwrap_or(""))
     }
-    
+
     pub fn apply_time(&self) -> Result<TimePeriod> {
-        TimePeriod::parse_period(self.apply_start.as_deref().unwrap_or(""), self.apply_end.as_deref())
+        TimePeriod::parse_period(
+            self.apply_start.as_deref().unwrap_or(""),
+            self.apply_end.as_deref(),
+        )
     }
-    
+
     pub fn hold_time(&self) -> Result<TimePeriod> {
-        TimePeriod::parse_period(self.start_time.as_deref().unwrap_or(""), self.end_time.as_deref())
+        TimePeriod::parse_period(
+            self.start_time.as_deref().unwrap_or(""),
+            self.end_time.as_deref(),
+        )
     }
 
     pub fn applied(&self) -> bool {
@@ -581,8 +670,8 @@ impl SecondClass {
     }
 
     pub fn applyable(&self) -> bool {
-        self.status() == Status::Applying 
-            && !self.applied() 
+        self.status() == Status::Applying
+            && !self.applied()
             && self.apply_num.unwrap_or(0) < self.apply_limit.unwrap_or(0)
     }
 
@@ -608,11 +697,15 @@ impl SecondClass {
             // name: self.raw.get("businessDeptName")?.as_str()?.to_string(),
             // how can I implement it?
             // Try businessDeptId_dictText first, then businessDeptName, then bussinessDeptName
-            name: ["businessDeptId_dictText", "businessDeptName", "bussinessDeptName"]
-                .iter()
-                .find_map(|&key| self.raw.get(key).and_then(|v| v.as_str()))
-                .unwrap_or_default()
-                .to_string(),
+            name: [
+                "businessDeptId_dictText",
+                "businessDeptName",
+                "bussinessDeptName",
+            ]
+            .iter()
+            .find_map(|&key| self.raw.get(key).and_then(|v| v.as_str()))
+            .unwrap_or_default()
+            .to_string(),
             children: vec![],
             level: -1,
         })
@@ -622,12 +715,15 @@ impl SecondClass {
         let mut result = Vec::new();
         if let (Some(ids), Some(names)) = (
             self.raw.get("itemLable").and_then(|v| v.as_str()),
-            self.raw.get("lableNames").and_then(|v| v.as_array())
+            self.raw.get("lableNames").and_then(|v| v.as_array()),
         ) {
             let id_list: Vec<&str> = ids.split(',').collect();
             for (i, id) in id_list.iter().enumerate() {
                 if let Some(name) = names.get(i).and_then(|v| v.as_str()) {
-                    result.push(Label { id: id.to_string(), name: name.to_string() });
+                    result.push(Label {
+                        id: id.to_string(),
+                        name: name.to_string(),
+                    });
                 }
             }
         }
@@ -636,15 +732,19 @@ impl SecondClass {
 
     // === 对应 Python @cached_property children ===
     pub async fn get_children(&self, service: &YouthService) -> Result<Vec<SecondClass>> {
-        if !self.is_series() { return Ok(vec![]); }
-        
+        if !self.is_series() {
+            return Ok(vec![]);
+        }
+
         let url = "item/scItem/selectSignChirdItem";
         let params = json!({ "id": self.id });
-        
+
         // get_result 返回的是 list
         let raw_list = service.get_result(url, Some(params)).await?;
-        let list_val = raw_list.as_array().context("Children response is not array")?;
-        
+        let list_val = raw_list
+            .as_array()
+            .context("Children response is not array")?;
+
         let mut children = Vec::new();
         for v in list_val {
             children.push(serde_json::from_value(v.clone())?);
@@ -653,8 +753,15 @@ impl SecondClass {
     }
 
     // === 内部辅助 fetch ===
-    async fn fetch(service: &YouthService, filter: &SCFilter, url: &str, size: i32) -> Result<Vec<SecondClass>> {
-        let raw_list = service.page_search(url, filter.to_params(), -1, size).await?;
+    async fn fetch(
+        service: &YouthService,
+        filter: &SCFilter,
+        url: &str,
+        size: i32,
+    ) -> Result<Vec<SecondClass>> {
+        let raw_list = service
+            .page_search(url, filter.to_params(), -1, size)
+            .await?;
         let mut result = Vec::new();
         for v in raw_list {
             let sc: SecondClass = serde_json::from_value(v)?;
@@ -667,21 +774,27 @@ impl SecondClass {
 
     // === 核心 Find 方法 (支持 expand_series) ===
     pub async fn find(
-        service: &YouthService, 
-        filter: SCFilter, 
+        service: &YouthService,
+        filter: SCFilter,
         apply_ended: bool,
         expand_series: bool,
-        mut max: i32
+        mut max: i32,
     ) -> Result<Vec<SecondClass>> {
-        if max == 0 { return Ok(vec![]); }
-        
-        let endpoint = if apply_ended { "item/scItem/endList" } else { "item/scItem/enrolmentList" };
-        
+        if max == 0 {
+            return Ok(vec![]);
+        }
+
+        let endpoint = if apply_ended {
+            "item/scItem/endList"
+        } else {
+            "item/scItem/enrolmentList"
+        };
+
         // 1. 获取基础列表
         let base_list = Self::fetch(service, &filter, endpoint, 20).await?;
-        
+
         let mut result = Vec::new();
-        
+
         for sc in base_list {
             if expand_series && sc.is_series() {
                 // 如果是系列课程，且要求展开
@@ -689,12 +802,18 @@ impl SecondClass {
                 for child in children {
                     // Python逻辑: (apply_ended ^ (i.status == Status.APPLYING))
                     let is_applying = child.status() == Status::Applying;
-                    let status_ok = if apply_ended { !is_applying } else { is_applying };
-                    
+                    let status_ok = if apply_ended {
+                        !is_applying
+                    } else {
+                        is_applying
+                    };
+
                     if filter.check(&child, true) && status_ok {
                         result.push(child);
                         max -= 1;
-                        if max == 0 { break; }
+                        if max == 0 {
+                            break;
+                        }
                     }
                 }
             } else {
@@ -702,23 +821,36 @@ impl SecondClass {
                 result.push(sc);
                 max -= 1;
             }
-            
-            if max == 0 { break; }
+
+            if max == 0 {
+                break;
+            }
         }
-        
+
         Ok(result)
     }
-    
+
     pub async fn get_participated(service: &YouthService) -> Result<Vec<SecondClass>> {
         let url = "item/scParticipateItem/list";
         let raw = service.page_search(url, json!({}), -1, 20).await?;
-        let list = raw.into_iter().map(|v| serde_json::from_value(v)).collect::<Result<Vec<_>,_>>()?;
+        let list = raw
+            .into_iter()
+            .map(|v| serde_json::from_value(v))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(list)
     }
-    
-    pub async fn apply(&self, service: &YouthService, force: bool, auto_cancel: bool, sign_info: Option<SignInfo>) -> Result<bool> {
-        if !force && !self.applyable() { return Ok(false); }
-        
+
+    pub async fn apply(
+        &self,
+        service: &YouthService,
+        force: bool,
+        auto_cancel: bool,
+        sign_info: Option<SignInfo>,
+    ) -> Result<bool> {
+        if !force && !self.applyable() {
+            return Ok(false);
+        }
+
         let url = format!("mobile/item/enter/{}", self.id);
         let json_body = if self.need_sign_info() {
             let info = match sign_info {
@@ -758,7 +890,7 @@ impl SecondClass {
         let res = service.request(&url, "post", None, None).await?;
         Ok(res["success"].as_bool().unwrap_or(false))
     }
-    
+
     pub async fn update(&mut self, service: &YouthService) -> Result<()> {
         let url = "item/scItem/queryById";
         let params = json!({ "id": self.id });

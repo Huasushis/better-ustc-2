@@ -1,14 +1,14 @@
+use anyhow::{Context, Result};
+use serde_json::json;
 use std::sync::Arc;
 use tauri::{AppHandle, State};
 use tauri_plugin_store::StoreExt;
-use serde_json::json;
-use anyhow::{Result, Context};
 
-use crate::state::AppState;
 use crate::rustustc::cas::client::CASClient;
-use crate::rustustc::young::YouthService;
 use crate::rustustc::young::model::User;
-use crate::security::{encrypt_data, decrypt_data};
+use crate::rustustc::young::YouthService;
+use crate::security::{decrypt_data, encrypt_data};
+use crate::state::AppState;
 
 const CREDENTIALS_STORE: &str = "credentials.json";
 
@@ -16,7 +16,7 @@ const CREDENTIALS_STORE: &str = "credentials.json";
 pub async fn perform_login(
     state: &State<'_, AppState>,
     username: &str,
-    password: &str
+    password: &str,
 ) -> Result<User> {
     // 1. CAS 登录
     let client = CASClient::new();
@@ -24,7 +24,7 @@ pub async fn perform_login(
 
     // 2. Youth Service 初始化
     let youth = YouthService::new(&client).await?;
-    
+
     let client_arc = Arc::new(client);
     let youth_arc = Arc::new(youth);
 
@@ -40,11 +40,13 @@ pub async fn perform_login(
 
 /// 保存凭据 (加密)
 pub fn save_credentials(app: &AppHandle, username: &str, password: &str) -> Result<()> {
-    let store = app.store(CREDENTIALS_STORE).context("Failed to access store")?;
-    
+    let store = app
+        .store(CREDENTIALS_STORE)
+        .context("Failed to access store")?;
+
     // 加密密码
     let encrypted_pwd = encrypt_data(app, password)?;
-    
+
     store.set("username", json!(username));
     store.set("password", json!(encrypted_pwd)); // 存储密文
     store.save().context("Failed to save store")?;
@@ -55,9 +57,8 @@ pub fn save_credentials(app: &AppHandle, username: &str, password: &str) -> Resu
 /// 返回: (是否登录成功, 是否有存储的账号, 用户名, 用户信息/错误信息)
 pub async fn try_auto_login(
     app: &AppHandle,
-    state: &State<'_, AppState>
+    state: &State<'_, AppState>,
 ) -> Result<(bool, bool, Option<String>, Option<User>)> {
-    
     // 1. 检查内存状态
     {
         let youth_guard = state.youth_service.lock().await;
@@ -69,10 +70,16 @@ pub async fn try_auto_login(
     }
 
     // 2. 检查磁盘存储
-    let store = app.store(CREDENTIALS_STORE).context("Failed to access store")?;
-    
-    let username_opt = store.get("username").and_then(|v| v.as_str().map(|s| s.to_string()));
-    let encrypted_pwd_opt = store.get("password").and_then(|v| v.as_str().map(|s| s.to_string()));
+    let store = app
+        .store(CREDENTIALS_STORE)
+        .context("Failed to access store")?;
+
+    let username_opt = store
+        .get("username")
+        .and_then(|v| v.as_str().map(|s| s.to_string()));
+    let encrypted_pwd_opt = store
+        .get("password")
+        .and_then(|v| v.as_str().map(|s| s.to_string()));
 
     if let (Some(ref username), Some(ref encrypted_pwd)) = (&username_opt, &encrypted_pwd_opt) {
         // 解密密码
@@ -103,7 +110,9 @@ pub async fn try_auto_login(
 
 /// 登出并清除凭据
 pub fn clear_credentials(app: &AppHandle) -> Result<()> {
-    let store = app.store(CREDENTIALS_STORE).context("Failed to access store")?;
+    let store = app
+        .store(CREDENTIALS_STORE)
+        .context("Failed to access store")?;
     store.delete("password"); // 只删密码
     store.save().context("Failed to save store")?;
     Ok(())

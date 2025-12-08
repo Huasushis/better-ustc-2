@@ -1,7 +1,7 @@
+use better_ustc_2_lib::recommend::Recommender;
 use better_ustc_2_lib::rustustc::cas::client::CASClient;
 use better_ustc_2_lib::rustustc::young::model::Department;
 use better_ustc_2_lib::rustustc::young::{SCFilter, SecondClass, YouthService};
-use better_ustc_2_lib::recommend::Recommender;
 use dotenv::dotenv;
 use serde_json::json;
 
