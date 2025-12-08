@@ -9,6 +9,9 @@
     "core:default",
     "opener:default",
     "http:default",
-    "store:default"
+    "store:default",
+    "notification:default",
+    "dialog:default",
+    "log:default"
   ]
 }
