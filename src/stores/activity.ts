@@ -20,7 +20,15 @@ export interface Activity {
   start_time?: string | null
   end_time?: string | null
   tel?: string | null
-  raw?: any
+  // Flattened fields from backend
+  pic?: string
+  placeInfo?: string
+  organizer_dictText?: string
+  businessDeptName?: string
+  bussinessDeptName?: string
+  businessDeptId_dictText?: string
+  module?: string
+  [key: string]: any
   // children optional (series)
   children?: Activity[]
 }
@@ -50,9 +58,10 @@ export const moduleDict: Record<string, string> = {
 }
 
 export const activityDeptName = (a: Activity) =>
-  a.raw?.businessDeptId_dictText || a.raw?.businessDeptName || a.raw?.bussinessDeptName || ''
+  a.businessDeptId_dictText || a.businessDeptName || a.bussinessDeptName || ''
 
 export const shortTime = (t?: string | null) => (t ? format(new Date(t), 'MM-dd HH:mm') : '')
+
 
 export const useActivityStore = defineStore('activity', {
   state: () => ({

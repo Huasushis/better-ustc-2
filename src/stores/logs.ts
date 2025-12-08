@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { Store } from '@tauri-apps/plugin-store'
+import { writeTextFile, BaseDirectory } from '@tauri-apps/plugin-fs'
 
 let storePromise: Promise<Store> | null = null
 const getStore = () => {
@@ -54,6 +55,11 @@ export const useLogStore = defineStore('logs', {
       } catch (e) {
         console.error('clear log failed', e)
       }
+    },
+    async saveToFile() {
+      const content = this.entries.join('\n')
+      const filename = `better-ustc-logs-${Date.now()}.txt`
+      await writeTextFile(filename, content, { baseDir: BaseDirectory.Download })
     },
   },
 })

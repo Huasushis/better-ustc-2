@@ -10,7 +10,7 @@ const emit = defineEmits<{
   (e: 'apply'): void
 }>()
 
-const cover = computed(() => props.activity.raw?.pic ? `https://young.ustc.edu.cn/login/${props.activity.raw.pic}` : 'https://via.placeholder.com/120')
+const cover = computed(() => props.activity.pic ? `https://young.ustc.edu.cn/login/${props.activity.pic}` : 'https://via.placeholder.com/120')
 const isSeries = computed(() => props.activity.item_category === '1')
 const registered = computed(() => props.registered || props.activity.boolean_registration === 1)
 </script>
@@ -30,12 +30,13 @@ const registered = computed(() => props.registered || props.activity.boolean_reg
       </div>
       <div class="text-[12px] text-gray-500 mt-1 flex items-center gap-1">
         <Icon name="location-o" />
-        <span class="truncate">{{ activity.raw?.placeInfo || '未提供地点' }}</span>
+        <span class="truncate">{{ activity.placeInfo || '未提供地点' }}</span>
       </div>
       <div class="text-[12px] text-gray-500 mt-1 flex items-center gap-1">
         <Icon name="friends-o" />
-        <span class="truncate">{{ activity.raw?.organizer_dictText || activity.raw?.businessDeptName || '主办方未知' }}</span>
+        <span class="truncate">{{ activity.organizer_dictText || activity.businessDeptName || '主办方未知' }}</span>
       </div>
+
       <div class="mt-1 flex items-center gap-2">
         <Tag plain type="warning" size="medium">截止 {{ shortTime(activity.apply_end) }}</Tag>
         <Tag plain type="primary" size="medium">{{ statusText(activity.status_code) }}</Tag>

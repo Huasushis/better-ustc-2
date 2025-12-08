@@ -58,9 +58,11 @@ export const useUserStore = defineStore('user', {
     async logout() {
       try {
         await invoke('logout')
-        this.status = { logged_in: false, has_stored_creds: false, username: null, user: null }
+        // Refresh status to get the saved username (if any)
+        await this.fetchStatus()
       } catch (e) {
         console.error(e)
+        this.status = { logged_in: false, has_stored_creds: false, username: null, user: null }
       }
     },
   },

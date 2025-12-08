@@ -1,10 +1,14 @@
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router'
-import { computed } from 'vue'
+import { computed, onMounted, watch } from 'vue'
 import { Tabbar, TabbarItem, ConfigProvider } from 'vant'
+import { useUserStore } from './stores/user'
+import { useActivityStore } from './stores/activity'
 
 const route = useRoute()
 const router = useRouter()
+const userStore = useUserStore()
+const activityStore = useActivityStore()
 
 const active = computed({
   get() {
@@ -18,12 +22,24 @@ const active = computed({
     else if (name === 'registered') router.replace('/registered')
   },
 })
+
+onMounted(async () => {
+  await userStore.fetchStatus()
+})
+
+watch(() => userStore.isLoggedIn, (val) => {
+  if (val) {
+    activityStore.fetchAll()
+    activityStore.fetchRecommended()
+    activityStore.fetchMine()
+  }
+}, { immediate: true })
 </script>
 
 <template>
   <ConfigProvider :theme-vars="{ primaryColor: '#1e80ff' }">
-    <div class="min-h-screen flex flex-col bg-[#f7f8fa]">
-      <div class="flex-1 overflow-y-auto pb-14">
+    <div class="min-h-screen flex flex-col bg-[#f7f8fa] pt-[env(safe-area-inset-top)]">
+      <div class="flex-1 overflow-hidden pb-14">
         <router-view v-slot="{ Component }">
           <keep-alive>
             <component :is="Component" />

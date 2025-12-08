@@ -25,11 +25,11 @@
     "active": true,
     "targets": "all",
     "icon": [
-      "icons/i32x32.png",
-      "icons/i128x128.png",
-      "icons/i256x256.png",
-      "icons/i.icns",
-      "icons/i.ico"
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
     ]
   }
 }

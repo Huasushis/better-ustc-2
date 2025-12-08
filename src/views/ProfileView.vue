@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { NavBar, Cell, CellGroup, Button, Field, Form, Toast, showToast, showNotify } from 'vant'
 import { useUserStore } from '../stores/user'
 import { useRouter } from 'vue-router'
@@ -23,8 +23,14 @@ const handleDevTap = () => {
 
 onMounted(async () => {
   await Promise.all([userStore.fetchStatus(), logStore.load()])
-  if (userStore.status.username) username.value = userStore.status.username
 })
+
+// Auto-fill username if available and field is empty
+watch(() => userStore.status.username, (val) => {
+  if (val && !username.value) {
+    username.value = val
+  }
+}, { immediate: true })
 
 const onLogin = async () => {
   if (!username.value || !password.value) return showToast('请输入账号密码')

@@ -1,24 +1,34 @@
 <script setup lang="ts">
-import { NavBar, Cell, CellGroup, Image as VanImage } from 'vant'
-import pkg from '../../package.json'
+import { NavBar, Cell, CellGroup } from 'vant'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+const version = '0.1.0' // Should match package.json
 </script>
 
 <template>
-  <div class="min-h-screen bg-[#f7f8fa] pb-4">
-    <NavBar title="关于" left-arrow @click-left="$router.back()" fixed />
-    <div class="pt-12 px-3">
-      <div class="bg-white rounded-lg p-4 shadow-sm flex items-center gap-3">
-        <VanImage width="64" height="64" round src="/logo.png" fit="cover" />
-        <div>
-          <div class="text-lg font-semibold">Better USTC 2</div>
-          <div class="text-gray-500 text-sm">跨平台二课助手</div>
+  <div class="min-h-screen bg-[#f7f8fa]">
+    <NavBar title="关于" left-arrow @click-left="router.back()" fixed />
+    <div class="pt-12 px-4 flex flex-col items-center">
+      <div class="mt-10 mb-6 flex flex-col items-center">
+        <div class="w-20 h-20 bg-blue-500 rounded-xl flex items-center justify-center text-white text-2xl font-bold shadow-lg">
+          USTC
         </div>
+        <div class="mt-3 text-lg font-semibold">Better USTC II</div>
+        <div class="text-gray-500 text-sm">v{{ version }}</div>
       </div>
-      <CellGroup inset class="mt-4">
-        <Cell title="版本" :value="pkg.version" />
-        <Cell title="许可证" value="MIT" />
-        <Cell title="作者" value="陈鑫 / 范祎博涵 / 周映诚" />
+
+      <CellGroup inset class="w-full">
+        <Cell title="开发者" value="Huasushis" />
+        <Cell title="开源协议" value="MIT" />
+        <Cell title="GitHub" value="https://github.com/Huasushis/better-ustc-2" is-link url="https://github.com/Huasushis/better-ustc-2" />
       </CellGroup>
+
+      <div class="mt-auto mb-10 text-center text-gray-400 text-xs">
+        <p>Copyright © 2025 Huasushis</p>
+        <p>All Rights Reserved</p>
+      </div>
     </div>
   </div>
 </template>
+
