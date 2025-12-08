@@ -37,6 +37,7 @@ lib.rs Tauri commands
 | `register_for_activity` | `activity_id: String` | `Result<bool, String>` | `true` 代表报名成功 | 先 `update` 再 `apply`，若时间冲突会尝试自动取消冲突活动后重试 |
 | `get_recommended_activities` | - | `Result<serde_json::Value, String>` | 推荐活动列表（最多 10 条） | 基于历史活动的 TF/标签/部门得分 |
 | `get_activity_children` | `activity_id: String` | `Result<serde_json::Value, String>` | 系列课子项目列表 | 非系列课返回 `NOT_A_SERIES` 错误 JSON |
+| `get_activity_detail` | `activity_id: String` | `Result<serde_json::Value, String>` | 获取项目详细内容 | 如报名人数需要通过这个才能获得 |
 | `get_class_schedule` | - | `Result<serde_json::Value, String>` | 暂未实现，返回空数组 | 预留 |
 | `get_pending_appeals` | - | `Result<serde_json::Value, String>` | 暂未实现，返回空数组 | 预留 |
 

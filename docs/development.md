@@ -94,6 +94,7 @@
 | `register_for_activity` | `activity_id: String` | `Result<bool, String>` | 报名指定活动，必要时获取报名信息并处理时间冲突的自动取消。 |
 | `get_recommended_activities` | - | `Result<serde_json::Value, String>` | 基于历史参与的简单推荐列表。 |
 | `get_activity_children` | `activity_id: String` | `Result<serde_json::Value, String>` | 系列课子项目，非系列课返回错误 JSON。 |
+| `get_activity_detail` | `activity_id: String` | `Result<serde_json::Value, String>` | 获取项目详细内容 |
 | `get_class_schedule` | - | `Result<serde_json::Value, String>` | 占位实现，当前返回空数组。 |
 | `get_pending_appeals` | - | `Result<serde_json::Value, String>` | 占位实现，当前返回空数组。 |
 
