@@ -11,7 +11,6 @@ const router = useRouter()
 const activeNames = ref(['rec', 'all'])
 const refreshing = ref(false)
 const timerDaily = ref<number | null>(null)
-const scrollRef = ref<HTMLElement | null>(null)
 const isTop = ref(true)
 
 const loadAll = async () => {
@@ -156,7 +155,7 @@ onUnmounted(() => {
 
 <template>
   <div class="h-full flex flex-col bg-[#f7f8fa]">
-    <NavBar title="首页" :fixed="false" />
+    <NavBar title="首页" fixed placeholder safe-area-inset-top :z-index="100" />
     <PullRefresh 
       v-model="refreshing" 
       @refresh="loadAll" 

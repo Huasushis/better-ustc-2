@@ -22,7 +22,7 @@ onMounted(async () => {
 
 <template>
   <div class="h-full flex flex-col bg-[#f7f8fa]">
-    <NavBar title="我的报名" :fixed="false" />
+    <NavBar title="我的报名" fixed placeholder safe-area-inset-top />
     <div class="flex-1 overflow-hidden">
       <Tabs v-model:active="active" swipeable class="h-full flex flex-col">
         <Tab title="报名中/已截止" name="registered" class="h-full overflow-y-auto">

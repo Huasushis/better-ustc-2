@@ -101,13 +101,13 @@ onUnmounted(stopAuto)
 
 <template>
   <div class="min-h-screen bg-[#f7f8fa] pb-4">
-    <NavBar title="活动详情" left-arrow @click-left="$router.back()" fixed />
-    <div class="pt-12 px-3">
+    <NavBar title="活动详情" left-arrow @click-left="$router.back()" fixed placeholder safe-area-inset-top />
+    <div class="px-3 pt-3">
       <div v-if="loading" class="py-10 text-center text-gray-500"><Loading size="24" vertical>加载中</Loading></div>
       <template v-else-if="detail">
         <div class="bg-white rounded-lg p-4 shadow-sm">
           <div class="flex items-start gap-3">
-            <img :src="detail.raw?.pic ? `https://young.ustc.edu.cn/login/${detail.raw.pic}` : 'https://via.placeholder.com/120'" class="w-24 h-24 rounded-md object-cover" />
+            <img :src="detail.pic ? `https://young.ustc.edu.cn/login/${detail.pic}` : 'https://via.placeholder.com/120'" class="w-24 h-24 rounded-md object-cover" />
             <div class="flex-1 min-w-0">
               <div class="text-lg font-semibold leading-tight">{{ detail.name }}</div>
               <div class="mt-2 flex gap-2 flex-wrap">
@@ -120,12 +120,12 @@ onUnmounted(stopAuto)
           </div>
           <CellGroup inset class="mt-3">
             <Cell title="时间" :value="`${shortTime(detail.start_time)} - ${shortTime(detail.end_time)}`" />
-            <Cell title="地点" :value="detail.raw?.placeInfo || '未提供'" />
-            <Cell title="主办方" :value="detail.raw?.organizer_dictText || detail.raw?.businessDeptName || '未知'" />
+            <Cell title="地点" :value="detail.placeInfo || '未提供'" />
+            <Cell title="主办方" :value="detail.organizer_dictText || detail.businessDeptName || '未知'" />
             <Cell title="报名截止" :value="shortTime(detail.apply_end)" />
-            <Cell title="联系电话" :value="detail.tel || detail.raw?.tel || '无'" />
+            <Cell title="联系电话" :value="detail.tel || '无'" />
           </CellGroup>
-          <div class="mt-3 text-sm leading-relaxed text-gray-700" v-html="detail.base_content || detail.conceive || detail.raw?.baseContent || '暂无详情'" />
+          <div class="mt-3 text-sm leading-relaxed text-gray-700" v-html="detail.baseContent || detail.conceive || '暂无详情'" />
           <div class="mt-4 flex gap-2">
             <Button type="primary" block @click="onApply">立即报名</Button>
             <Button :loading="autoApplyLoading" block plain type="warning" @click="autoApply">名额监控</Button>

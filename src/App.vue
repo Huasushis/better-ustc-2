@@ -14,6 +14,7 @@ const active = computed({
   get() {
     if (route.path.startsWith('/profile')) return 'profile'
     if (route.path.startsWith('/registered')) return 'registered'
+    if (route.path.startsWith('/activity')) return 'home' // Keep home active for detail view
     return 'home'
   },
   set(name: string) {
@@ -38,7 +39,7 @@ watch(() => userStore.isLoggedIn, (val) => {
 
 <template>
   <ConfigProvider :theme-vars="{ primaryColor: '#1e80ff' }">
-    <div class="min-h-screen flex flex-col bg-[#f7f8fa] pt-[env(safe-area-inset-top)]">
+    <div class="min-h-screen flex flex-col bg-[#f7f8fa]">
       <div class="flex-1 overflow-hidden pb-14">
         <router-view v-slot="{ Component }">
           <keep-alive>
@@ -48,9 +49,37 @@ watch(() => userStore.isLoggedIn, (val) => {
       </div>
       <Tabbar :fixed="true" :safe-area-inset-bottom="true" v-model="active">
         <TabbarItem name="home" icon="home-o">首页</TabbarItem>
-        <TabbarItem name="registered" icon="todo-list-o">我的报名</TabbarItem>
-        <TabbarItem name="profile" icon="user-o">个人中心</TabbarItem>
+        <TabbarItem name="registered" icon="records">已报</TabbarItem>
+        <TabbarItem name="profile" icon="user-o">我的</TabbarItem>
       </Tabbar>
     </div>
   </ConfigProvider>
 </template>
+
+<style>
+:root {
+  --van-nav-bar-height: 56px;
+  --van-nav-bar-background: #fff;
+}
+.van-nav-bar__content {
+  align-items: flex-end !important;
+  padding-bottom: 12px;
+  height: 100%;
+}
+.van-nav-bar__title {
+  font-weight: 600;
+  font-size: 17px;
+}
+.van-nav-bar .van-icon {
+  font-size: 22px;
+  color: #333;
+  margin-bottom: 10px;
+}
+.van-nav-bar__text {
+  color: #333;
+  margin-bottom: 10px;
+}
+.van-nav-bar__left, .van-nav-bar__right {
+  align-items: flex-end !important;
+}
+</style>

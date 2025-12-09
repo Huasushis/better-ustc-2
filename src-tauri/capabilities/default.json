@@ -12,6 +12,8 @@
     "store:default",
     "notification:default",
     "dialog:default",
-    "log:default"
+    "log:default",
+    "fs:default",
+    "fs:allow-download-write"
   ]
 }

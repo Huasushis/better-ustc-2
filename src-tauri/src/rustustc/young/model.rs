@@ -223,6 +223,9 @@ impl SCFilter {
             let ids: Vec<String> = self.labels.iter().map(|l| l.id.clone()).collect();
             params["itemLable"] = json!(ids.join(","));
         }
+        params["column"] = json!("createTime");
+        params["order"] = json!("desc");
+        params["field"] = json!("id,,action");
         params
     }
 
@@ -762,6 +765,10 @@ impl SecondClass {
         let raw_list = service
             .page_search(url, filter.to_params(), -1, size)
             .await?;
+
+        //print raw
+        // println!("raw list: {:?}", raw_list);
+
         let mut result = Vec::new();
         for v in raw_list {
             let sc: SecondClass = serde_json::from_value(v)?;

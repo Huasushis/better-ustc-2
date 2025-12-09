@@ -32,6 +32,11 @@ watch(() => userStore.status.username, (val) => {
   }
 }, { immediate: true })
 
+// Update save checkbox based on stored creds status
+watch(() => userStore.status.has_stored_creds, (val) => {
+  save.value = val
+}, { immediate: true })
+
 const onLogin = async () => {
   if (!username.value || !password.value) return showToast('请输入账号密码')
   const ok = await userStore.login(username.value, password.value, save.value)
@@ -49,8 +54,8 @@ const gotoLogs = () => logStore.devMode && router.push('/logs')
 
 <template>
   <div class="min-h-screen bg-[#f7f8fa] pb-6">
-    <NavBar title="个人中心" fixed />
-    <div class="pt-12 px-3">
+    <NavBar title="个人中心" fixed placeholder safe-area-inset-top />
+    <div class="px-3 pt-3">
       <div class="bg-white rounded-xl p-4 shadow-sm mb-4" @click="handleDevTap">
         <div class="flex items-center gap-3">
           <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-lg font-semibold">
@@ -59,7 +64,7 @@ const gotoLogs = () => logStore.devMode && router.push('/logs')
           <div class="flex-1 min-w-0">
             <div class="font-semibold text-[16px]">{{ userStore.displayName }}</div>
             <div class="text-gray-500 text-[12px]">
-              {{ userStore.status.user?.classes || '未登录' }}
+              {{ userStore.status.user?.classes || (userStore.status.username ? '已保存账号' : '未登录') }}
             </div>
           </div>
           <Button size="small" type="primary" plain @click="gotoMine">我的报名</Button>

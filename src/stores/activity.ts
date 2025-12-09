@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { invoke } from '@tauri-apps/api/core'
 import { format } from 'date-fns'
+import { useLogStore } from './logs'
 
 export interface Activity {
   id: string
@@ -88,11 +89,14 @@ export const useActivityStore = defineStore('activity', {
     async fetchAll() {
       this.loadingAll = true
       this.error = ''
+      useLogStore().add('Fetching all activities')
       try {
         const res = (await invoke('get_unended_activities')) as Activity[]
         this.all = res
+        useLogStore().add(`Fetched ${res.length} activities`)
       } catch (e: any) {
         this.error = e?.toString?.() || '获取活动失败'
+        useLogStore().add(`Fetch all failed: ${this.error}`)
       } finally {
         this.loadingAll = false
       }
@@ -100,11 +104,14 @@ export const useActivityStore = defineStore('activity', {
     async fetchRecommended() {
       this.loadingRec = true
       this.error = ''
+      useLogStore().add('Fetching recommended activities')
       try {
         const res = (await invoke('get_recommended_activities')) as Activity[]
         this.recommended = res
+        useLogStore().add(`Fetched ${res.length} recommended activities`)
       } catch (e: any) {
         this.error = e?.toString?.() || '获取推荐失败'
+        useLogStore().add(`Fetch recommended failed: ${this.error}`)
       } finally {
         this.loadingRec = false
       }
@@ -112,13 +119,16 @@ export const useActivityStore = defineStore('activity', {
     async fetchMine() {
       this.loadingMine = true
       this.error = ''
+      useLogStore().add('Fetching my activities')
       try {
         const reg = (await invoke('get_registered_activities')) as Activity[]
         const part = (await invoke('get_participated_activities')) as Activity[]
         this.registered = reg as any
         this.participated = part as any
+        useLogStore().add(`Fetched ${reg.length} registered, ${part.length} participated`)
       } catch (e: any) {
         this.error = e?.toString?.() || '获取我的活动失败'
+        useLogStore().add(`Fetch mine failed: ${this.error}`)
       } finally {
         this.loadingMine = false
       }
@@ -130,6 +140,7 @@ export const useActivityStore = defineStore('activity', {
       this.filter = { keyword: '', modules: [], department: '', organizer: '', startAfter: '', endBefore: '' }
     },
     async fetchDetail(id: string) {
+      useLogStore().add(`Fetching detail for ${id}`)
       if (this.detail.has(id)) return this.detail.get(id)!
       try {
         const res = (await invoke('get_activity_detail', { activity_id: id })) as Activity
@@ -141,10 +152,12 @@ export const useActivityStore = defineStore('activity', {
         return res
       } catch (e: any) {
         this.error = e?.toString?.() || '获取详情失败'
+        useLogStore().add(`Fetch detail failed: ${this.error}`)
         throw e
       }
     },
     async refreshDetail(id: string) {
+      useLogStore().add(`Refreshing detail for ${id}`)
       try {
         const res = (await invoke('get_activity_detail', { activity_id: id })) as Activity
         if (res.item_category === '1') {
@@ -155,11 +168,20 @@ export const useActivityStore = defineStore('activity', {
         return res
       } catch (e: any) {
         this.error = e?.toString?.() || '刷新详情失败'
+        useLogStore().add(`Refresh detail failed: ${this.error}`)
         throw e
       }
     },
     async apply(id: string) {
-      return invoke('register_for_activity', { activity_id: id }) as Promise<boolean>
+      useLogStore().add(`Applying for activity ${id}`)
+      try {
+        const res = await invoke('register_for_activity', { activity_id: id }) as boolean
+        useLogStore().add(`Apply result: ${res}`)
+        return res
+      } catch (e: any) {
+        useLogStore().add(`Apply failed: ${e}`)
+        throw e
+      }
     },
   },
 })

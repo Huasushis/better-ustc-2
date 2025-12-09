@@ -20,6 +20,8 @@ impl Recommender {
         // Get candidates
         let candidates = SecondClass::find(service, SCFilter::new(), false, false, -1).await?;
 
+        println!("candidates size: {}, history size: {}", candidates.len(), history.len());
+
         if history.is_empty() {
             return Ok(candidates.into_iter().take(limit).collect());
         }
