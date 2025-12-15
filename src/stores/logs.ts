@@ -26,7 +26,17 @@ export const useLogStore = defineStore('logs', {
       }
     },
     async add(message: string) {
-      const line = `[${new Date().toISOString()}] ${message}`
+      const now = new Date()
+      const localTime = now.toLocaleString('zh-CN', { 
+        year: 'numeric', 
+        month: '2-digit', 
+        day: '2-digit', 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        second: '2-digit',
+        hour12: false 
+      })
+      const line = `[${localTime}] ${message}`
       this.entries.push(line)
       try {
         const store = await getStore()
