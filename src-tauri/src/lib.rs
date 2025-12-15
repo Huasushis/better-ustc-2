@@ -86,6 +86,8 @@ async fn login(
     // 2. 保存加密凭据
     if save {
         auth::save_credentials(&app, &username, &password).map_err(map_err)?;
+    } else {
+        auth::clear_credentials(&app).map_err(map_err)?;
     }
 
     Ok(json!(user_info))
@@ -103,6 +105,8 @@ async fn get_login_status(
     if logged_in {
         Ok(json!({
             "logged_in": true,
+            "has_stored_creds": has_creds,
+            "username": username,
             "user": user
         }))
     } else {
@@ -163,7 +167,7 @@ async fn get_unended_activities(state: State<'_, AppState>) -> Result<serde_json
     Ok(json!(activities))
 }
 
-/// 获取已报名 / 报名已结束的活动。
+/// 获取已报名活动（结束时间+45分钟 > 当前时间）。
 #[tauri::command]
 async fn get_registered_activities(
     state: State<'_, AppState>,
@@ -174,18 +178,26 @@ async fn get_registered_activities(
         .await
         .map_err(map_err)?;
 
+    let now = chrono::Local::now().naive_local();
+    let offset_minutes = chrono::Duration::minutes(45);
+
     let registered_activities: Vec<&SecondClass> = all_my_activities
         .iter()
         .filter(|sc| {
-            use crate::rustustc::young::model::Status;
-            matches!(sc.status(), Status::Applying | Status::ApplyEnded)
+            // 结束时间+45分钟 > 当前时间（即活动尚未完全结束）
+            if let Ok(hold_time) = sc.hold_time() {
+                hold_time.end + offset_minutes > now
+            } else {
+                // 无法解析时间的活动，保留在已报名列表
+                true
+            }
         })
         .collect();
 
     Ok(json!(registered_activities))
 }
 
-/// 获取已参与/已结项的活动。
+/// 获取已参与活动（结束时间+45分钟 < 当前时间）。
 #[tauri::command]
 async fn get_participated_activities(
     state: State<'_, AppState>,
@@ -195,12 +207,19 @@ async fn get_participated_activities(
         .await
         .map_err(map_err)?;
 
-    // 过滤：已完成的活动
+    let now = chrono::Local::now().naive_local();
+    let offset_minutes = chrono::Duration::minutes(45);
+
+    // 过滤：结束时间+45分钟 < 当前时间（即活动已完全结束）
     let finished: Vec<&SecondClass> = all
         .iter()
         .filter(|sc| {
-            use crate::rustustc::young::model::Status;
-            !matches!(sc.status(), Status::Applying | Status::ApplyEnded)
+            if let Ok(hold_time) = sc.hold_time() {
+                hold_time.end + offset_minutes < now
+            } else {
+                // 无法解析时间的活动，放入已参与列表
+                false
+            }
         })
         .collect();
 
