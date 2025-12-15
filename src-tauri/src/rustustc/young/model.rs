@@ -181,7 +181,10 @@ pub struct SCFilter {
 
 impl SCFilter {
     pub fn new() -> Self {
-        Self::default()
+        SCFilter {
+            fuzzy_name: true,
+            ..Self::default()
+        }
     }
     pub fn name(mut self, name: &str) -> Self {
         self.name = name.to_string();
@@ -439,40 +442,40 @@ impl From<i32> for Status {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SecondClass {
     pub id: String,
-    #[serde(rename = "itemName")]
+    #[serde(alias = "itemName")]
     pub name: String,
-    #[serde(rename = "itemStatus")]
+    #[serde(alias = "itemStatus")]
     pub status_code: i32,
-    #[serde(rename = "validHour")]
+    #[serde(alias = "validHour")]
     pub valid_hour: Option<f64>,
-    #[serde(rename = "applyNum")]
+    #[serde(alias = "applyNum")]
     pub apply_num: Option<i32>,
-    #[serde(rename = "peopleNum")]
+    #[serde(alias = "peopleNum")]
     pub apply_limit: Option<i32>,
-    #[serde(rename = "booleanRegistration")]
+    #[serde(alias = "booleanRegistration")]
     pub boolean_registration: Option<i32>,
-    #[serde(rename = "needSignInfo")]
+    #[serde(alias = "needSignInfo")]
     pub need_sign_info_str: Option<String>,
-    #[serde(rename = "conceive")]
+    #[serde(alias = "conceive")]
     pub conceive: Option<String>,
-    #[serde(rename = "baseContent")]
+    #[serde(alias = "baseContent")]
     pub base_content: Option<String>,
-    #[serde(rename = "itemCategory")]
+    #[serde(alias = "itemCategory")]
     pub item_category: Option<String>, // "1" 为系列活动
 
     // Time
-    #[serde(rename = "createTime")]
+    #[serde(alias = "createTime")]
     pub create_time_str: Option<String>,
-    #[serde(rename = "applySt")]
+    #[serde(alias = "applySt")]
     pub apply_start: Option<String>,
-    #[serde(rename = "applyEt")]
+    #[serde(alias = "applyEt")]
     pub apply_end: Option<String>,
-    #[serde(rename = "st")]
+    #[serde(alias = "st")]
     pub start_time: Option<String>,
-    #[serde(rename = "et")]
+    #[serde(alias = "et")]
     pub end_time: Option<String>,
 
-    #[serde(rename = "tel")]
+    #[serde(alias = "tel")]
     pub tel: Option<String>,
 
     #[serde(flatten)]
