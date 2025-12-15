@@ -58,12 +58,11 @@ watch(() => userStore.isLoggedIn, (val) => {
 
 <style>
 :root {
-  --van-nav-bar-height: 56px;
+  --van-nav-bar-height: 44px;
   --van-nav-bar-background: #fff;
 }
 .van-nav-bar__content {
-  align-items: flex-end !important;
-  padding-bottom: 12px;
+  align-items: center !important;
   height: 100%;
 }
 .van-nav-bar__title {
@@ -71,15 +70,13 @@ watch(() => userStore.isLoggedIn, (val) => {
   font-size: 17px;
 }
 .van-nav-bar .van-icon {
-  font-size: 22px;
+  font-size: 20px;
   color: #333;
-  margin-bottom: 10px;
 }
 .van-nav-bar__text {
   color: #333;
-  margin-bottom: 10px;
 }
 .van-nav-bar__left, .van-nav-bar__right {
-  align-items: flex-end !important;
+  align-items: center !important;
 }
 </style>
