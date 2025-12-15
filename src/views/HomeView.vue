@@ -162,6 +162,8 @@ onUnmounted(() => {
       class="flex-1 overflow-y-auto" 
       :disabled="!isTop"
       @scroll.passive="onScroll"
+      :head-height="80"
+      :pull-distance="100"
     >
       <div class="px-3 py-3 space-y-3 min-h-full">
         <div class="bg-white rounded-lg p-3 shadow-sm space-y-2">
