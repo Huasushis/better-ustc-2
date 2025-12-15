@@ -25,7 +25,7 @@ const version = '0.1.0' // Should match package.json
       </CellGroup>
 
       <div class="mt-auto mb-10 text-center text-gray-400 text-xs">
-        <p>Copyright © 2025 Huasushis</p>
+        <p>Copyright © 2025 Huasushis, Jason, 近彩休蔽日</p>
         <p>All Rights Reserved</p>
       </div>
     </div>
