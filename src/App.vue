@@ -1,160 +1,89 @@
 <script setup lang="ts">
-import { ref } from "vue";
-import { invoke } from "@tauri-apps/api/core";
+import { useRoute, useRouter } from 'vue-router'
+import { computed, onMounted, watch } from 'vue'
+import { Tabbar, TabbarItem, ConfigProvider } from 'vant'
+import { useUserStore } from './stores/user'
+import { useActivityStore } from './stores/activity'
 
-const greetMsg = ref("");
-const name = ref("");
+const route = useRoute()
+const router = useRouter()
+const userStore = useUserStore()
+const activityStore = useActivityStore()
 
-async function greet() {
-  // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-  greetMsg.value = await invoke("greet", { name: name.value });
-}
+const active = computed({
+  get() {
+    // 优先检查是否是活动详情页，并且有from参数
+    if (route.path.startsWith('/activity')) {
+      const from = route.query.from as string
+      if (from === 'registered') return 'registered'
+      if (from === 'profile') return 'profile'
+      return 'home'
+    }
+    if (route.path.startsWith('/profile') || route.path.startsWith('/about') || route.path.startsWith('/logs')) return 'profile'
+    if (route.path.startsWith('/registered')) return 'registered'
+    return 'home'
+  },
+  set(name: string) {
+    if (name === 'home') router.replace('/')
+    else if (name === 'profile') router.replace('/profile')
+    else if (name === 'registered') router.replace('/registered')
+  },
+})
+
+onMounted(async () => {
+  await userStore.fetchStatus()
+})
+
+watch(() => userStore.isLoggedIn, (val) => {
+  if (val) {
+    activityStore.fetchAll()
+    activityStore.fetchRecommended()
+    activityStore.fetchMine()
+  }
+}, { immediate: true })
 </script>
 
 <template>
-  <main class="container">
-    <h1>Welcome to Tauri + Vue</h1>
-
-    <div class="row">
-      <a href="https://vite.dev" target="_blank">
-        <img src="/vite.svg" class="logo vite" alt="Vite logo" />
-      </a>
-      <a href="https://tauri.app" target="_blank">
-        <img src="/tauri.svg" class="logo tauri" alt="Tauri logo" />
-      </a>
-      <a href="https://vuejs.org/" target="_blank">
-        <img src="./assets/vue.svg" class="logo vue" alt="Vue logo" />
-      </a>
+  <ConfigProvider :theme-vars="{ primaryColor: '#1e80ff' }">
+    <div class="min-h-screen flex flex-col bg-[#f7f8fa]">
+      <div class="flex-1 pb-14 overflow-y-auto">
+        <router-view v-slot="{ Component, route }">
+          <!-- 详情页不使用 keep-alive，其他页面使用 -->
+          <keep-alive :exclude="['ActivityDetailView']">
+            <component :is="Component" :key="route.path.startsWith('/activity') ? route.fullPath : undefined" />
+          </keep-alive>
+        </router-view>
+      </div>
+      <Tabbar :fixed="true" :safe-area-inset-bottom="true" v-model="active">
+        <TabbarItem name="home" icon="home-o">首页</TabbarItem>
+        <TabbarItem name="registered" icon="records">已报</TabbarItem>
+        <TabbarItem name="profile" icon="user-o">我的</TabbarItem>
+      </Tabbar>
     </div>
-    <p>Click on the Tauri, Vite, and Vue logos to learn more.</p>
-
-    <form class="row" @submit.prevent="greet">
-      <input id="greet-input" v-model="name" placeholder="Enter a name..." />
-      <button type="submit">Greet</button>
-    </form>
-    <p>{{ greetMsg }}</p>
-  </main>
+  </ConfigProvider>
 </template>
 
-<style scoped>
-.logo.vite:hover {
-  filter: drop-shadow(0 0 2em #747bff);
-}
-
-.logo.vue:hover {
-  filter: drop-shadow(0 0 2em #249b73);
-}
-
-</style>
 <style>
 :root {
-  font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
-  font-size: 16px;
-  line-height: 24px;
-  font-weight: 400;
-
-  color: #0f0f0f;
-  background-color: #f6f6f6;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  -webkit-text-size-adjust: 100%;
+  --van-nav-bar-height: 44px;
+  --van-nav-bar-background: #fff;
 }
-
-.container {
-  margin: 0;
-  padding-top: 10vh;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  text-align: center;
+.van-nav-bar__content {
+  align-items: center !important;
+  height: 100%;
 }
-
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: 0.75s;
+.van-nav-bar__title {
+  font-weight: 600;
+  font-size: 17px;
 }
-
-.logo.tauri:hover {
-  filter: drop-shadow(0 0 2em #24c8db);
+.van-nav-bar .van-icon {
+  font-size: 20px;
+  color: #333;
 }
-
-.row {
-  display: flex;
-  justify-content: center;
+.van-nav-bar__text {
+  color: #333;
 }
-
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
+.van-nav-bar__left, .van-nav-bar__right {
+  align-items: center !important;
 }
-
-a:hover {
-  color: #535bf2;
-}
-
-h1 {
-  text-align: center;
-}
-
-input,
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  color: #0f0f0f;
-  background-color: #ffffff;
-  transition: border-color 0.25s;
-  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.2);
-}
-
-button {
-  cursor: pointer;
-}
-
-button:hover {
-  border-color: #396cd8;
-}
-button:active {
-  border-color: #396cd8;
-  background-color: #e8e8e8;
-}
-
-input,
-button {
-  outline: none;
-}
-
-#greet-input {
-  margin-right: 5px;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    color: #f6f6f6;
-    background-color: #2f2f2f;
-  }
-
-  a:hover {
-    color: #24c8db;
-  }
-
-  input,
-  button {
-    color: #ffffff;
-    background-color: #0f0f0f98;
-  }
-  button:active {
-    background-color: #0f0f0f69;
-  }
-}
-
 </style>
