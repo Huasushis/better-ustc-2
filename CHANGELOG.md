@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.2](https://github.com/Huasushis/better-ustc-2/compare/v1.1.1...v1.1.2) (2025-12-18)
+
+
+### Bug Fixes
+
+* **ci:** fix ci ([f6cf205](https://github.com/Huasushis/better-ustc-2/commit/f6cf2056c5b9a31e82155f652fdfc53cfb08c5b7))
+
 ## [1.1.1](https://github.com/Huasushis/better-ustc-2/compare/v1.1.0...v1.1.1) (2025-12-18)
 
 
