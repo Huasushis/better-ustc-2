@@ -53,7 +53,7 @@ pnpm tauri android dev
 pnpm tauri android build
 ```
 
-> 注意：请参考 Tauri 官方移动端文档完成 Android SDK、NDK、以及 Rust 环境配置。
+> 注意：请参考 [Tauri 官方移动端文档](https://tauri.app/start/prerequisites/) 完成 Android SDK、NDK、以及 Rust 环境配置。
 
 ---
 
