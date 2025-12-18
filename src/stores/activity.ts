@@ -179,9 +179,9 @@ export const useActivityStore = defineStore('activity', {
     async apply(id: string, autoCancel: boolean = false): Promise<boolean | string> {
       useLogStore().add(`Applying for activity ${id}, autoCancel=${autoCancel}`)
       try {
-        const res = await invoke('register_for_activity', { activity_id: id, auto_cancel: autoCancel }) as boolean
-        useLogStore().add(`Apply result: ${res}`)
-        return res
+        const res = await invoke('register_for_activity', { activity_id: id, auto_cancel: autoCancel })
+        useLogStore().add(`Apply raw result: ${JSON.stringify(res)}, type: ${typeof res}, === true: ${res === true}`)
+        return res as boolean
       } catch (e: any) {
         const errStr = e?.toString?.() || ''
         useLogStore().add(`Apply failed: ${errStr}`)
@@ -202,15 +202,21 @@ export const useActivityStore = defineStore('activity', {
     },
     // 本地更新活动的报名状态，避免整体刷新
     updateRegistrationStatus(id: string, registered: boolean) {
+      useLogStore().add(`updateRegistrationStatus: id=${id}, registered=${registered}`)
       const updateInList = (list: Activity[]) => {
-        const item = list.find(a => a.id === id)
-        if (item) {
-          item.boolean_registration = registered ? 1 : 0
-          if (registered && item.apply_num != null) {
-            item.apply_num = (item.apply_num || 0) + 1
-          } else if (!registered && item.apply_num != null && item.apply_num > 0) {
-            item.apply_num = item.apply_num - 1
+        const idx = list.findIndex(a => a.id === id)
+        if (idx !== -1) {
+          // 创建新对象以确保响应式更新
+          const item = list[idx]
+          const newApplyNum = registered 
+            ? (item.apply_num || 0) + 1 
+            : Math.max(0, (item.apply_num || 1) - 1)
+          list[idx] = {
+            ...item,
+            boolean_registration: registered ? 1 : 0,
+            apply_num: newApplyNum
           }
+          useLogStore().add(`Updated item in list: ${id}, boolean_registration=${list[idx].boolean_registration}`)
         }
       }
       updateInList(this.recommended)
@@ -224,6 +230,8 @@ export const useActivityStore = defineStore('activity', {
         } else if (!registered && cached.apply_num != null && cached.apply_num > 0) {
           cached.apply_num = cached.apply_num - 1
         }
+        // 重新设置以触发响应式
+        this.detail.set(id, { ...cached })
       }
     },
   },

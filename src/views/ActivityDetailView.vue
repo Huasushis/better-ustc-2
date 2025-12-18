@@ -44,19 +44,32 @@ watch(currentId, (newId) => {
 
 const onApply = async (autoCancel: boolean = false) => {
   if (!detail.value) return
-  logStore.add(`点击报名按钮: ${detail.value.id}, autoCancel=${autoCancel}`)
+  const activityId = detail.value.id
+  logStore.add(`点击报名按钮: ${activityId}, autoCancel=${autoCancel}`)
   showLoadingToast({ message: '报名中...', duration: 0, forbidClick: true })
   try {
-    const result = await store.apply(detail.value.id, autoCancel)
+    const result = await store.apply(activityId, autoCancel)
+    logStore.add(`报名返回结果: ${JSON.stringify(result)}, 类型: ${typeof result}`)
     if (result === true) {
-      logStore.add(`报名成功: ${detail.value.id}`)
+      logStore.add(`报名成功，开始更新状态: ${activityId}`)
       closeToast()
       showSuccessToast('报名成功')
-      await scheduleNotification(detail.value)
-      // 更新本地状态
-      store.updateRegistrationStatus(detail.value.id, true)
-      // 更新当前详情
-      detail.value = { ...detail.value, boolean_registration: 1, apply_num: (detail.value.apply_num || 0) + 1 }
+      // 更新本地状态（首页列表）
+      store.updateRegistrationStatus(activityId, true)
+      // 强制刷新详情（从服务器获取最新状态）
+      try {
+        detail.value = await store.refreshDetail(activityId)
+      } catch {
+        // 如果刷新失败，手动更新本地状态
+        if (detail.value) {
+          detail.value = { ...detail.value, boolean_registration: 1, apply_num: (detail.value.apply_num || 0) + 1 }
+        }
+      }
+      // 设置提醒
+      if (detail.value) {
+        scheduleNotification(detail.value)
+      }
+      logStore.add(`状态更新完成，当前 boolean_registration: ${detail.value?.boolean_registration}`)
       // 刷新已报名列表
       store.fetchMine()
     } else if (typeof result === 'string') {
