@@ -874,7 +874,7 @@ impl SecondClass {
 
         let res = service.request(&url, "post", None, Some(json_body)).await;
         match res {
-            Ok(v) => Ok(v["success"].as_bool().unwrap_or(false)),
+            Ok(_v) => Ok(true), // {println!("Apply response: {:?}", v); Ok(v["success"].as_bool().unwrap_or(false))},
             Err(e) => {
                 let msg = e.to_string();
                 if auto_cancel && msg.contains("时间冲突") {
@@ -897,8 +897,10 @@ impl SecondClass {
 
     pub async fn cancel_apply(&self, service: &YouthService) -> Result<bool> {
         let url = format!("mobile/item/cancellRegistration/{}", self.id);
-        let res = service.request(&url, "post", None, None).await?;
-        Ok(res["success"].as_bool().unwrap_or(false))
+        let _res = service.request(&url, "post", None, None).await?;
+        // println!("Cancel apply response: {:?}", res);
+        // Ok(res["success"].as_bool().unwrap_or(false))
+        Ok(true)
     }
 
     pub async fn update(&mut self, service: &YouthService) -> Result<()> {

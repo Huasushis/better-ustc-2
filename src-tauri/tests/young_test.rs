@@ -5,6 +5,40 @@ use better_ustc_2_lib::rustustc::young::{SCFilter, SecondClass, YouthService};
 use dotenv::dotenv;
 use serde_json::json;
 
+async fn get_activity_detail(
+    service: &YouthService,
+    activity_id: String,
+) -> Result<SecondClass, String> {
+
+    // 1. 构造 dummy 对象
+    let mut sc = SecondClass {
+        id: activity_id,
+        name: "".into(),
+        status_code: 0,
+        valid_hour: None,
+        apply_num: None,
+        apply_limit: None,
+        boolean_registration: None,
+        need_sign_info_str: None,
+        conceive: None,
+        base_content: None,
+        item_category: None,
+        create_time_str: None,
+        apply_start: None,
+        apply_end: None,
+        start_time: None,
+        end_time: None,
+        tel: None,
+        raw: serde_json::Value::Null,
+    };
+
+    // 2. 调用 update 从服务器获取最新详情
+    sc.update(&service).await.expect("Failed to update activity detail");
+
+    // 3. 返回完整的对象
+    Ok(sc)
+}
+
 #[tokio::test]
 #[ignore = "requires real USTC CAS credentials and network access"]
 async fn test_young_full_flow() {
@@ -110,4 +144,24 @@ async fn test_young_full_flow() {
     for course in &recommended {
         println!(" - [{}] {}", course.id, course.name);
     }
+
+    let id = "022c87f09ef2974536306ef12136b6f6".to_string();
+
+    //7. Get activity detail
+    println!("\nFetching activity detail for ID: {}...", id);
+    let detail = get_activity_detail(&young, id)
+        .await
+        .expect("Failed to get activity detail");
+
+    let json_detail = json!(detail);
+    println!("Activity Detail: {}", json_detail);
+
+    if !detail.applied() {
+        let result = detail.apply(&young, true, false, None).await.expect("Failed to apply for activity");
+        println!("Re-applied for activity, result: {}", result);
+    } else {
+        let result = detail.cancel_apply(&young).await.expect("Failed to cancel activity");
+        println!("Cancelled application for activity, result: {}", result);
+    }
+
 }

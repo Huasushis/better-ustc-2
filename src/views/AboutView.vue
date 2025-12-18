@@ -8,8 +8,8 @@ const version = '0.1.0' // Should match package.json
 
 <template>
   <div class="min-h-screen bg-[#f7f8fa]">
-    <NavBar title="关于" left-arrow @click-left="router.back()" fixed />
-    <div class="pt-12 px-4 flex flex-col items-center">
+    <NavBar title="关于" left-arrow @click-left="router.back()" fixed placeholder safe-area-inset-top />
+    <div class="px-4 flex flex-col items-center">
       <div class="mt-10 mb-6 flex flex-col items-center">
         <div class="w-20 h-20 bg-blue-500 rounded-xl flex items-center justify-center text-white text-2xl font-bold shadow-lg">
           USTC

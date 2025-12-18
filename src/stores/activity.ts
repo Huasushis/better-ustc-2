@@ -159,10 +159,14 @@ export const useActivityStore = defineStore('activity', {
     async refreshDetail(id: string) {
       useLogStore().add(`Refreshing detail for ${id}`)
       try {
+        useLogStore().add(`Calling get_activity_detail with activity_id: ${id}`)
         const res = (await invoke('get_activity_detail', { activity_id: id })) as Activity
+        useLogStore().add(`get_activity_detail response: ${JSON.stringify(res).slice(0, 800)}`)
         if (res.item_category === '1') {
+          useLogStore().add(`Activity is series, fetching children`)
           const children = (await invoke('get_activity_children', { activity_id: id })) as Activity[]
           res.children = children
+          useLogStore().add(`Fetched ${children.length} children`)
         }
         this.detail.set(id, res)
         return res
@@ -172,14 +176,27 @@ export const useActivityStore = defineStore('activity', {
         throw e
       }
     },
-    async apply(id: string) {
-      useLogStore().add(`Applying for activity ${id}`)
+    async apply(id: string, autoCancel: boolean = false): Promise<boolean | string> {
+      useLogStore().add(`Applying for activity ${id}, autoCancel=${autoCancel}`)
       try {
-        const res = await invoke('register_for_activity', { activity_id: id }) as boolean
+        const res = await invoke('register_for_activity', { activity_id: id, auto_cancel: autoCancel }) as boolean
         useLogStore().add(`Apply result: ${res}`)
         return res
       } catch (e: any) {
-        useLogStore().add(`Apply failed: ${e}`)
+        const errStr = e?.toString?.() || ''
+        useLogStore().add(`Apply failed: ${errStr}`)
+        // 返回错误字符串而不是throw，让调用方判断是否是时间冲突
+        return errStr
+      }
+    },
+    async cancelApply(id: string) {
+      useLogStore().add(`Canceling activity ${id}`)
+      try {
+        const res = await invoke('cancel_activity', { activity_id: id }) as boolean
+        useLogStore().add(`Cancel result: ${res}`)
+        return res
+      } catch (e: any) {
+        useLogStore().add(`Cancel failed: ${e}`)
         throw e
       }
     },

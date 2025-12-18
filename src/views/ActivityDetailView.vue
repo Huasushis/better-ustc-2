@@ -1,43 +1,127 @@
 <script setup lang="ts">
-import { onMounted, ref, onUnmounted } from 'vue'
+import { ref, onUnmounted, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { NavBar, Tag, Cell, CellGroup, Toast, Button, Loading, showNotify } from 'vant'
+import { NavBar, Tag, Cell, CellGroup, Button, Loading, showNotify, showConfirmDialog, showLoadingToast, showSuccessToast, showFailToast, closeToast } from 'vant'
 import { useActivityStore, statusText, shortTime } from '../stores/activity'
+import { useLogStore } from '../stores/logs'
 import ActivityCard from '../components/ActivityCard.vue'
 import { requestPermission, sendNotification } from '@tauri-apps/plugin-notification'
 
 const route = useRoute()
 const store = useActivityStore()
-const id = route.params.id as string
+const logStore = useLogStore()
+
+// 使用 computed 监听路由参数变化
+const currentId = computed(() => route.params.id as string)
 const detail = ref<any>(null)
 const loading = ref(true)
 
-const load = async () => {
+// 判断是否已报名
+const isRegistered = computed(() => detail.value?.boolean_registration === 1)
+// 判断是否是系列活动
+const isSeries = computed(() => detail.value?.item_category === '1')
+
+const load = async (id: string) => {
   loading.value = true
+  logStore.add(`开始加载活动详情: ${id}`)
   try {
     detail.value = await store.refreshDetail(id)
+    logStore.add(`活动详情加载成功: ${JSON.stringify(detail.value).slice(0, 500)}...`)
   } catch (e: any) {
-    Toast.fail(e?.toString?.() || '加载失败')
+    logStore.add(`活动详情加载失败: ${e?.toString?.() || '未知错误'}`)
+    showFailToast(e?.toString?.() || '加载失败')
   } finally {
     loading.value = false
   }
 }
 
-onMounted(load)
+// 监听路由参数变化，重新加载数据
+watch(currentId, (newId) => {
+  if (newId) {
+    load(newId)
+  }
+}, { immediate: true })
 
-const onApply = async () => {
+const onApply = async (autoCancel: boolean = false) => {
   if (!detail.value) return
-  Toast.loading({ message: '报名中...', duration: 0 })
+  logStore.add(`点击报名按钮: ${detail.value.id}, autoCancel=${autoCancel}`)
+  showLoadingToast({ message: '报名中...', duration: 0, forbidClick: true })
   try {
-    const ok = await store.apply(detail.value.id)
-    if (ok) {
-      Toast.success('报名成功')
+    const result = await store.apply(detail.value.id, autoCancel)
+    if (result === true) {
+      logStore.add(`报名成功: ${detail.value.id}`)
+      closeToast()
+      showSuccessToast('报名成功')
       await scheduleNotification(detail.value)
-    } else Toast.fail('报名失败/名额已满')
+      // 刷新详情以更新报名状态
+      detail.value = await store.refreshDetail(detail.value.id)
+      // 刷新已报名列表
+      store.fetchMine()
+    } else if (typeof result === 'string') {
+      // 检查是否是时间冲突错误
+      if (result.includes('时间冲突') || result.includes('冲突')) {
+        closeToast()
+        try {
+          await showConfirmDialog({
+            title: '时间冲突',
+            message: '该活动与已报名活动时间冲突，是否自动取消冲突活动并重新报名？',
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+          })
+          // 用户选择确定，使用autoCancel=true重试
+          await onApply(true)
+        } catch {
+          // 用户取消
+          showFailToast('已取消报名')
+        }
+      } else {
+        logStore.add(`报名失败: ${result}`)
+        closeToast()
+        showFailToast(result || '报名失败')
+      }
+    } else {
+      logStore.add(`报名失败/名额已满: ${detail.value.id}`)
+      closeToast()
+      showFailToast('报名失败/名额已满')
+    }
   } catch (e: any) {
-    Toast.fail(e?.toString?.() || '报名失败')
-  } finally {
-    Toast.clear()
+    logStore.add(`报名异常: ${e?.toString?.()}`)
+    closeToast()
+    showFailToast(e?.toString?.() || '报名失败')
+  }
+}
+
+const onCancelApply = async () => {
+  if (!detail.value) return
+  logStore.add(`点击取消报名按钮: ${detail.value.id}`)
+  try {
+    await showConfirmDialog({
+      title: '确认取消',
+      message: '确定要取消报名该活动吗？',
+      confirmButtonText: '确定取消',
+      cancelButtonText: '返回',
+    })
+    showLoadingToast({ message: '取消中...', duration: 0, forbidClick: true })
+    const ok = await store.cancelApply(detail.value.id)
+    if (ok) {
+      logStore.add(`取消报名成功: ${detail.value.id}`)
+      closeToast()
+      showSuccessToast('取消成功')
+      // 刷新详情以更新报名状态
+      detail.value = await store.refreshDetail(detail.value.id)
+      // 刷新已报名列表
+      store.fetchMine()
+    } else {
+      logStore.add(`取消报名失败: ${detail.value.id}`)
+      closeToast()
+      showFailToast('取消失败')
+    }
+  } catch (e: any) {
+    if (e !== 'cancel') {
+      logStore.add(`取消报名异常: ${e?.toString?.()}`)
+      closeToast()
+      showFailToast(e?.toString?.() || '取消失败')
+    }
   }
 }
 
@@ -62,26 +146,32 @@ const autoTimer = ref<number | null>(null)
 const autoApply = async () => {
   if (!detail.value || autoTimer.value) return
   autoApplyLoading.value = true
-  Toast.loading({ message: '监控名额中...', duration: 0 })
+  showLoadingToast({ message: '监控名额中...', duration: 0, forbidClick: true })
   let attempts = 0
   autoTimer.value = window.setInterval(async () => {
     attempts += 1
-    const latest = await store.refreshDetail(detail.value!.id)
-    if (latest.apply_limit && (latest.apply_num || 0) < latest.apply_limit && latest.status_code === 26) {
-      try {
-        const ok = await store.apply(latest.id)
-        if (ok) {
-          Toast.success('抢到名额，已报名')
+    try {
+      const latest = await store.refreshDetail(detail.value!.id)
+      detail.value = latest // 更新详情
+      if (latest.apply_limit && (latest.apply_num || 0) < latest.apply_limit && latest.status_code === 26) {
+        const result = await store.apply(latest.id)
+        if (result === true) {
+          closeToast()
+          showSuccessToast('抢到名额，已报名')
           await scheduleNotification(latest)
+          // 刷新详情和列表
+          detail.value = await store.refreshDetail(latest.id)
+          store.fetchMine()
           stopAuto()
           return
         }
-      } catch (e) {
-        console.error(e)
       }
+    } catch (e) {
+      console.error(e)
     }
     if (attempts >= 20) {
-      Toast.fail('监控结束，仍未抢到')
+      closeToast()
+      showFailToast('监控结束，仍未抢到')
       stopAuto()
     }
   }, 30_000)
@@ -93,7 +183,7 @@ const stopAuto = () => {
     autoTimer.value = null
   }
   autoApplyLoading.value = false
-  Toast.clear()
+  // 不在这里关闭toast，因为可能会覆盖成功/失败提示
 }
 
 onUnmounted(stopAuto)
@@ -127,8 +217,19 @@ onUnmounted(stopAuto)
           </CellGroup>
           <div class="mt-3 text-sm leading-relaxed text-gray-700" v-html="detail.baseContent || detail.conceive || '暂无详情'" />
           <div class="mt-4 flex gap-2">
-            <Button type="primary" block @click="onApply">立即报名</Button>
-            <Button :loading="autoApplyLoading" block plain type="warning" @click="autoApply">名额监控</Button>
+            <!-- 系列活动不显示报名按钮 -->
+            <template v-if="!isSeries">
+              <template v-if="isRegistered">
+                <Button type="danger" block @click="onCancelApply">取消报名</Button>
+              </template>
+              <template v-else>
+                <Button type="primary" block @click="() => onApply()">立即报名</Button>
+                <Button :loading="autoApplyLoading" block plain type="warning" @click="autoApply">名额监控</Button>
+              </template>
+            </template>
+            <template v-else>
+              <div class="text-center text-gray-500 text-sm w-full">系列活动请在下方选择子项目报名</div>
+            </template>
           </div>
         </div>
 
@@ -139,7 +240,7 @@ onUnmounted(stopAuto)
             :key="child.id"
             :activity="child"
             :show-apply="true"
-            @detail="$router.push({ name: 'activity-detail', params: { id: child.id } })"
+            @detail="$router.push({ name: 'activity-detail', params: { id: child.id }, query: { from: $route.query.from } })"
             @apply="() => onApply()"
           />
         </div>

@@ -113,10 +113,10 @@ impl Recommender {
         scored_candidates
             .sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
 
-        let history_ids: HashSet<String> = history.iter().map(|h| h.id.clone()).collect();
+        let _history_ids: HashSet<String> = history.iter().map(|h| h.id.clone()).collect();
         let result = scored_candidates
             .into_iter()
-            .filter(|(_, item)| !history_ids.contains(&item.id))
+            // .filter(|(_, item)| !history_ids.contains(&item.id))
             .take(limit)
             .map(|(_, item)| item)
             .collect();

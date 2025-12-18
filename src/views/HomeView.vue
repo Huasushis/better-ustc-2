@@ -1,17 +1,35 @@
 <script setup lang="ts">
 import { onMounted, ref, computed, onUnmounted } from 'vue'
-import { NavBar, Collapse, CollapseItem, PullRefresh, Empty, Toast, Loading, showToast, Search, DropdownMenu, DropdownItem, Button } from 'vant'
+import { NavBar, Collapse, CollapseItem, Empty, Loading, showToast, Search, DropdownMenu, DropdownItem, Button, showConfirmDialog, showLoadingToast, showSuccessToast, showFailToast, closeToast } from 'vant'
 import ActivityCard from '../components/ActivityCard.vue'
 import { useActivityStore, moduleDict, activityDeptName } from '../stores/activity'
+import { useLogStore } from '../stores/logs'
 import { useRouter } from 'vue-router'
 import { requestPermission, sendNotification } from '@tauri-apps/plugin-notification'
 
 const activityStore = useActivityStore()
+const logStore = useLogStore()
 const router = useRouter()
 const activeNames = ref(['rec', 'all'])
 const refreshing = ref(false)
 const timerDaily = ref<number | null>(null)
-const isTop = ref(true)
+
+// 本地更新活动的报名状态，避免整体刷新
+const updateActivityRegistration = (id: string, registered: boolean) => {
+  const updateList = (list: any[]) => {
+    const item = list.find(a => a.id === id)
+    if (item) {
+      item.boolean_registration = registered ? 1 : 0
+      if (registered && item.apply_num != null) {
+        item.apply_num = (item.apply_num || 0) + 1
+      } else if (!registered && item.apply_num != null && item.apply_num > 0) {
+        item.apply_num = item.apply_num - 1
+      }
+    }
+  }
+  updateList(activityStore.recommended)
+  updateList(activityStore.all)
+}
 
 const loadAll = async () => {
   refreshing.value = true
@@ -23,11 +41,6 @@ const loadAll = async () => {
     showToast(e?.toString?.() || '加载失败')
   )
   refreshing.value = false
-}
-
-const onScroll = (e: Event) => {
-  const target = e.target as HTMLElement
-  isTop.value = target.scrollTop === 0
 }
 
 onMounted(loadAll)
@@ -113,18 +126,84 @@ const toggleModule = (code: string) => {
 const filteredRec = computed(() => filtered(activityStore.recommended))
 const filteredAll = computed(() => filtered(activityStore.all))
 
-const goDetail = (id: string) => router.push({ name: 'activity-detail', params: { id } })
+const goDetail = (id: string) => {
+  logStore.add(`点击进入活动详情: ${id}`)
+  router.push({ name: 'activity-detail', params: { id }, query: { from: 'home' } })
+}
 
-const onApply = async (id: string) => {
-  Toast.loading({ message: '正在尝试报名...', duration: 0 })
+const onApply = async (id: string, autoCancel: boolean = false) => {
+  logStore.add(`点击报名活动: ${id}, autoCancel=${autoCancel}`)
+  showLoadingToast({ message: '正在尝试报名...', duration: 0, forbidClick: true })
   try {
-    const ok = await activityStore.apply(id)
-    if (ok) Toast.success('报名成功')
-    else Toast.fail('报名失败或名额已满')
+    const result = await activityStore.apply(id, autoCancel)
+    if (result === true) {
+      closeToast()
+      showSuccessToast('报名成功')
+      // 更新本地活动状态，避免整体刷新
+      updateActivityRegistration(id, true)
+      // 刷新已报名列表
+      activityStore.fetchMine()
+    } else if (typeof result === 'string') {
+      // 检查是否是时间冲突错误
+      if (result.includes('时间冲突') || result.includes('冲突')) {
+        closeToast()
+        try {
+          await showConfirmDialog({
+            title: '时间冲突',
+            message: '该活动与已报名活动时间冲突，是否自动取消冲突活动并重新报名？',
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+          })
+          // 用户选择确定，使用autoCancel=true重试
+          await onApply(id, true)
+        } catch {
+          // 用户取消
+          showFailToast('已取消报名')
+        }
+      } else {
+        closeToast()
+        showFailToast(result || '报名失败')
+      }
+    } else {
+      closeToast()
+      showFailToast('报名失败或名额已满')
+    }
   } catch (e: any) {
-    Toast.fail(e?.toString?.() || '报名失败')
-  } finally {
-    Toast.clear()
+    closeToast()
+    showFailToast(e?.toString?.() || '报名失败')
+  }
+}
+
+const onCancel = async (id: string) => {
+  logStore.add(`点击取消报名活动: ${id}`)
+  try {
+    await showConfirmDialog({
+      title: '确认取消',
+      message: '确定要取消报名该活动吗？',
+      confirmButtonText: '确定取消',
+      cancelButtonText: '返回',
+    })
+    showLoadingToast({ message: '取消中...', duration: 0, forbidClick: true })
+    const ok = await activityStore.cancelApply(id)
+    if (ok) {
+      logStore.add(`取消报名成功: ${id}`)
+      closeToast()
+      showSuccessToast('取消成功')
+      // 更新本地活动状态，避免整体刷新
+      updateActivityRegistration(id, false)
+      // 刷新已报名列表
+      activityStore.fetchMine()
+    } else {
+      logStore.add(`取消报名失败: ${id}`)
+      closeToast()
+      showFailToast('取消失败')
+    }
+  } catch (e: any) {
+    closeToast()
+    if (e !== 'cancel') {
+      logStore.add(`取消报名异常: ${e?.toString?.()}`)
+      showFailToast(e?.toString?.() || '取消失败')
+    }
   }
 }
 
@@ -155,16 +234,12 @@ onUnmounted(() => {
 
 <template>
   <div class="h-full flex flex-col bg-[#f7f8fa]">
-    <NavBar title="首页" fixed placeholder safe-area-inset-top :z-index="100" />
-    <PullRefresh 
-      v-model="refreshing" 
-      @refresh="loadAll" 
-      class="flex-1 overflow-y-auto" 
-      :disabled="!isTop"
-      @scroll.passive="onScroll"
-      :head-height="80"
-      :pull-distance="100"
-    >
+    <NavBar title="首页" fixed placeholder safe-area-inset-top :z-index="100">
+      <template #right>
+        <Button size="small" :loading="refreshing" @click="loadAll" icon="replay">刷新</Button>
+      </template>
+    </NavBar>
+    <div class="flex-1 overflow-y-auto">
       <div class="px-3 py-3 space-y-3 min-h-full">
         <div class="bg-white rounded-lg p-3 shadow-sm space-y-2">
           <Search v-model="keyword" placeholder="搜索名称/主办方/地点" />
@@ -207,6 +282,7 @@ onUnmounted(() => {
                 :show-apply="true"
                 @detail="() => goDetail(item.id)"
                 @apply="() => onApply(item.id)"
+                @cancel="() => onCancel(item.id)"
               />
             </template>
           </CollapseItem>
@@ -221,12 +297,13 @@ onUnmounted(() => {
                 :show-apply="true"
                 @detail="() => goDetail(item.id)"
                 @apply="() => onApply(item.id)"
+                @cancel="() => onCancel(item.id)"
               />
             </template>
           </CollapseItem>
         </Collapse>
-        <div class="mt-3 text-center text-[12px] text-gray-500">下拉刷新 · 数据来自二课平台</div>
+        <div class="mt-3 text-center text-[12px] text-gray-500">点击右上角刷新 · 数据来自二课平台</div>
       </div>
-    </PullRefresh>
+    </div>
   </div>
 </template>

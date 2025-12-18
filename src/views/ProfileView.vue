@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
-import { NavBar, Cell, CellGroup, Button, Field, Form, Toast, showToast, showNotify } from 'vant'
+import { NavBar, Cell, CellGroup, Button, Field, Form, showToast, showNotify, showSuccessToast } from 'vant'
 import { useUserStore } from '../stores/user'
 import { useRouter } from 'vue-router'
 import { useLogStore } from '../stores/logs'
@@ -41,7 +41,7 @@ const onLogin = async () => {
   if (!username.value || !password.value) return showToast('请输入账号密码')
   const ok = await userStore.login(username.value, password.value, save.value)
   if (ok) {
-    Toast.success('登录成功')
+    showSuccessToast('登录成功')
   } else {
     showNotify({ type: 'danger', message: userStore.error || '登录失败' })
   }

@@ -43,6 +43,7 @@ pub fn run() {
             get_registered_activities,
             get_participated_activities,
             register_for_activity,
+            cancel_activity,
             get_recommended_activities,
             get_activity_children,
             get_activity_detail,
@@ -227,10 +228,11 @@ async fn get_participated_activities(
 }
 
 /// 报名指定活动；会先更新详情再 apply，必要时自动取消冲突活动后重试。
-#[tauri::command]
+#[tauri::command(rename_all = "snake_case")]
 async fn register_for_activity(
     state: State<'_, AppState>,
     activity_id: String,
+    auto_cancel: bool,
 ) -> Result<bool, String> {
     let service = get_service(&state).await?;
     // 简单构造 dummy 对象以便调用 update -> apply
@@ -255,8 +257,40 @@ async fn register_for_activity(
         raw: serde_json::Value::Null,
     };
     sc.update(&service).await.map_err(map_err)?;
-    sc.apply(&service, false, true, None).await.map_err(map_err)
+    sc.apply(&service, false, auto_cancel, None).await.map_err(map_err)
 }
+
+#[tauri::command(rename_all = "snake_case")]
+async fn cancel_activity(
+    state: State<'_, AppState>,
+    activity_id: String,
+) -> Result<bool, String> {
+    let service = get_service(&state).await?;
+    // 简单构造 dummy 对象以便调用 cancel
+    let sc = SecondClass {
+        id: activity_id,
+        name: "".into(),
+        status_code: 0,
+        valid_hour: None,
+        apply_num: None,
+        apply_limit: None,
+        boolean_registration: None,
+        need_sign_info_str: None,
+        conceive: None,
+        base_content: None,
+        item_category: None,
+        create_time_str: None,
+        apply_start: None,
+        apply_end: None,
+        start_time: None,
+        end_time: None,
+        tel: None,
+        raw: serde_json::Value::Null,
+    };
+
+    sc.cancel_apply(&service).await.map_err(map_err)
+}
+
 
 /// 基于历史参与记录的简单推荐（TF/部门/模块加权）。
 #[tauri::command]
@@ -271,7 +305,7 @@ async fn get_recommended_activities(
 }
 
 /// 获取系列课的子项目；非系列课返回 `NOT_A_SERIES` 错误。
-#[tauri::command]
+#[tauri::command(rename_all = "snake_case")]
 async fn get_activity_children(
     state: State<'_, AppState>,
     activity_id: String,
@@ -318,7 +352,7 @@ async fn get_activity_children(
     Ok(json!(children))
 }
 
-#[tauri::command]
+#[tauri::command(rename_all = "snake_case")]
 async fn get_activity_detail(
     state: State<'_, AppState>,
     activity_id: String,

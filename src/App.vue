@@ -12,9 +12,15 @@ const activityStore = useActivityStore()
 
 const active = computed({
   get() {
-    if (route.path.startsWith('/profile')) return 'profile'
+    // 优先检查是否是活动详情页，并且有from参数
+    if (route.path.startsWith('/activity')) {
+      const from = route.query.from as string
+      if (from === 'registered') return 'registered'
+      if (from === 'profile') return 'profile'
+      return 'home'
+    }
+    if (route.path.startsWith('/profile') || route.path.startsWith('/about') || route.path.startsWith('/logs')) return 'profile'
     if (route.path.startsWith('/registered')) return 'registered'
-    if (route.path.startsWith('/activity')) return 'home' // Keep home active for detail view
     return 'home'
   },
   set(name: string) {
@@ -40,10 +46,11 @@ watch(() => userStore.isLoggedIn, (val) => {
 <template>
   <ConfigProvider :theme-vars="{ primaryColor: '#1e80ff' }">
     <div class="min-h-screen flex flex-col bg-[#f7f8fa]">
-      <div class="flex-1 overflow-hidden pb-14">
-        <router-view v-slot="{ Component }">
-          <keep-alive>
-            <component :is="Component" />
+      <div class="flex-1 pb-14 overflow-y-auto">
+        <router-view v-slot="{ Component, route }">
+          <!-- 详情页不使用 keep-alive，其他页面使用 -->
+          <keep-alive :exclude="['ActivityDetailView']">
+            <component :is="Component" :key="route.path.startsWith('/activity') ? route.fullPath : undefined" />
           </keep-alive>
         </router-view>
       </div>

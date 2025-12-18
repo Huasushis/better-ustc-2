@@ -4,10 +4,11 @@ import { computed } from 'vue'
 import type { Activity } from '../stores/activity'
 import { statusText, shortTime } from '../stores/activity'
 
-const props = defineProps<{ activity: Activity; showApply?: boolean; registered?: boolean }>()
+const props = defineProps<{ activity: Activity; showApply?: boolean; registered?: boolean; showApplyCount?: boolean }>()
 const emit = defineEmits<{
   (e: 'detail'): void
   (e: 'apply'): void
+  (e: 'cancel'): void
 }>()
 
 const cover = computed(() => props.activity.pic ? `https://young.ustc.edu.cn/login/${props.activity.pic}` : 'https://via.placeholder.com/120')
@@ -40,9 +41,19 @@ const registered = computed(() => props.registered || props.activity.boolean_reg
       <div class="mt-1 flex items-center gap-2">
         <Tag plain type="warning" size="medium">截止 {{ shortTime(activity.apply_end) }}</Tag>
         <Tag plain type="primary" size="medium">{{ statusText(activity.status_code) }}</Tag>
-        <Tag v-if="activity.apply_limit" plain size="medium">{{ activity.apply_num || 0 }}/{{ activity.apply_limit }}</Tag>
+        <Tag v-if="showApplyCount && activity.apply_limit" plain size="medium">{{ activity.apply_num || 0 }}/{{ activity.apply_limit }}</Tag>
       </div>
-      <div v-if="showApply" class="mt-2 flex gap-2">
+      <!-- 系列活动 -->
+      <div v-if="showApply && isSeries" class="mt-2">
+        <Button size="small" plain block @click.stop="emit('detail')">查看系列子项目</Button>
+      </div>
+      <!-- 已报名的非系列活动 -->
+      <div v-else-if="showApply && !isSeries && registered" class="mt-2 flex gap-2">
+        <Button size="small" type="danger" block @click.stop="emit('cancel')">取消报名</Button>
+        <Button size="small" plain block @click.stop="emit('detail')">详情</Button>
+      </div>
+      <!-- 未报名的非系列活动 -->
+      <div v-else-if="showApply && !isSeries" class="mt-2 flex gap-2">
         <Button size="small" type="primary" block @click.stop="emit('apply')">报名/抢位</Button>
         <Button size="small" plain block @click.stop="emit('detail')">详情</Button>
       </div>
