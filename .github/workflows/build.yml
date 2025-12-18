@@ -90,22 +90,24 @@ jobs:
       - name: Create keystore.properties and jks file
         env:
           storeFile: ${{ secrets.STORE_FILE }}
-          storePassword: ${{ secrets.STORE_PASSWORD }}
-          keyAlias: ${{ secrets.KEY_ALIAS }}
-          keyPassword: ${{ secrets.KEY_PASSWORD }}
           jksBase64: ${{ secrets.BASE64_JKS }}
         run: |
           resolvedStoreFile="${storeFile/#\~/$HOME}"
           mkdir -p "$(dirname $"$resolvedStoreFile")"
-          export SIGNING_STORE_PASSWORD=$storePassword
-          export SIGNING_KEY_ALIAS=$keyAlias
-          export SIGNING_KEY_PASSWORD=$keyPassword
           echo "$jksBase64" | base64 --decode > "$resolvedStoreFile"
 
       - name: Build APK
+        env:
+          SIGNING_STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
+          SIGNING_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: pnpm tauri android build --apk true
 
       - name: Build AAB
+        env:
+          SIGNING_STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
+          SIGNING_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: pnpm tauri android build --aab true
 
       - name: Upload Artifacts
