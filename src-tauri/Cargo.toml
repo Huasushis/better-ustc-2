@@ -1,6 +1,6 @@
 [package]
 name = "better-ustc-2"
-version = "0.1.0"
+version = "0.1.2"
 description = "A mobile program which imporve the experience of 青春科大（二课）"
 authors = ["Chen Xin", "Fan Yibohan", "Zhou Yingcheng"]
 edition = "2021"
