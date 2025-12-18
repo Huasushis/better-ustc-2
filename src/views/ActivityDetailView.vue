@@ -53,8 +53,10 @@ const onApply = async (autoCancel: boolean = false) => {
       closeToast()
       showSuccessToast('报名成功')
       await scheduleNotification(detail.value)
-      // 刷新详情以更新报名状态
-      detail.value = await store.refreshDetail(detail.value.id)
+      // 更新本地状态
+      store.updateRegistrationStatus(detail.value.id, true)
+      // 更新当前详情
+      detail.value = { ...detail.value, boolean_registration: 1, apply_num: (detail.value.apply_num || 0) + 1 }
       // 刷新已报名列表
       store.fetchMine()
     } else if (typeof result === 'string') {
@@ -107,8 +109,10 @@ const onCancelApply = async () => {
       logStore.add(`取消报名成功: ${detail.value.id}`)
       closeToast()
       showSuccessToast('取消成功')
-      // 刷新详情以更新报名状态
-      detail.value = await store.refreshDetail(detail.value.id)
+      // 更新本地状态
+      store.updateRegistrationStatus(detail.value.id, false)
+      // 更新当前详情
+      detail.value = { ...detail.value, boolean_registration: 0, apply_num: Math.max(0, (detail.value.apply_num || 1) - 1) }
       // 刷新已报名列表
       store.fetchMine()
     } else {
@@ -159,8 +163,9 @@ const autoApply = async () => {
           closeToast()
           showSuccessToast('抢到名额，已报名')
           await scheduleNotification(latest)
-          // 刷新详情和列表
-          detail.value = await store.refreshDetail(latest.id)
+          // 更新本地状态
+          store.updateRegistrationStatus(latest.id, true)
+          detail.value = { ...latest, boolean_registration: 1, apply_num: (latest.apply_num || 0) + 1 }
           store.fetchMine()
           stopAuto()
           return

@@ -14,23 +14,6 @@ const activeNames = ref(['rec', 'all'])
 const refreshing = ref(false)
 const timerDaily = ref<number | null>(null)
 
-// 本地更新活动的报名状态，避免整体刷新
-const updateActivityRegistration = (id: string, registered: boolean) => {
-  const updateList = (list: any[]) => {
-    const item = list.find(a => a.id === id)
-    if (item) {
-      item.boolean_registration = registered ? 1 : 0
-      if (registered && item.apply_num != null) {
-        item.apply_num = (item.apply_num || 0) + 1
-      } else if (!registered && item.apply_num != null && item.apply_num > 0) {
-        item.apply_num = item.apply_num - 1
-      }
-    }
-  }
-  updateList(activityStore.recommended)
-  updateList(activityStore.all)
-}
-
 const loadAll = async () => {
   refreshing.value = true
   await Promise.all([
@@ -140,7 +123,7 @@ const onApply = async (id: string, autoCancel: boolean = false) => {
       closeToast()
       showSuccessToast('报名成功')
       // 更新本地活动状态，避免整体刷新
-      updateActivityRegistration(id, true)
+      activityStore.updateRegistrationStatus(id, true)
       // 刷新已报名列表
       activityStore.fetchMine()
     } else if (typeof result === 'string') {
@@ -190,7 +173,7 @@ const onCancel = async (id: string) => {
       closeToast()
       showSuccessToast('取消成功')
       // 更新本地活动状态，避免整体刷新
-      updateActivityRegistration(id, false)
+      activityStore.updateRegistrationStatus(id, false)
       // 刷新已报名列表
       activityStore.fetchMine()
     } else {

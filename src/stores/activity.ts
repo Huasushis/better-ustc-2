@@ -200,5 +200,31 @@ export const useActivityStore = defineStore('activity', {
         throw e
       }
     },
+    // 本地更新活动的报名状态，避免整体刷新
+    updateRegistrationStatus(id: string, registered: boolean) {
+      const updateInList = (list: Activity[]) => {
+        const item = list.find(a => a.id === id)
+        if (item) {
+          item.boolean_registration = registered ? 1 : 0
+          if (registered && item.apply_num != null) {
+            item.apply_num = (item.apply_num || 0) + 1
+          } else if (!registered && item.apply_num != null && item.apply_num > 0) {
+            item.apply_num = item.apply_num - 1
+          }
+        }
+      }
+      updateInList(this.recommended)
+      updateInList(this.all)
+      // 更新详情缓存
+      const cached = this.detail.get(id)
+      if (cached) {
+        cached.boolean_registration = registered ? 1 : 0
+        if (registered && cached.apply_num != null) {
+          cached.apply_num = (cached.apply_num || 0) + 1
+        } else if (!registered && cached.apply_num != null && cached.apply_num > 0) {
+          cached.apply_num = cached.apply_num - 1
+        }
+      }
+    },
   },
 })

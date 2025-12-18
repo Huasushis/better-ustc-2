@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { NavBar, Tabs, Tab, Empty, Loading } from 'vant'
+import { NavBar, Tabs, Tab, Empty, Loading, showConfirmDialog, showLoadingToast, showSuccessToast, showFailToast, closeToast } from 'vant'
 import ActivityCard from '../components/ActivityCard.vue'
 import { useActivityStore } from '../stores/activity'
 import { useLogStore } from '../stores/logs'
@@ -18,6 +18,39 @@ const load = async () => {
 const goDetail = (id: string) => {
   logStore.add(`点击进入已报名活动详情: ${id}`)
   router.push({ name: 'activity-detail', params: { id }, query: { from: 'registered' } })
+}
+
+const onCancel = async (id: string) => {
+  logStore.add(`点击取消报名活动: ${id}`)
+  try {
+    await showConfirmDialog({
+      title: '确认取消',
+      message: '确定要取消报名该活动吗？',
+      confirmButtonText: '确定取消',
+      cancelButtonText: '返回',
+    })
+    showLoadingToast({ message: '取消中...', duration: 0, forbidClick: true })
+    const ok = await store.cancelApply(id)
+    if (ok) {
+      logStore.add(`取消报名成功: ${id}`)
+      closeToast()
+      showSuccessToast('取消成功')
+      // 更新本地活动状态
+      store.updateRegistrationStatus(id, false)
+      // 刷新已报名列表
+      store.fetchMine()
+    } else {
+      logStore.add(`取消报名失败: ${id}`)
+      closeToast()
+      showFailToast('取消失败')
+    }
+  } catch (e: any) {
+    closeToast()
+    if (e !== 'cancel') {
+      logStore.add(`取消报名异常: ${e?.toString?.()}`)
+      showFailToast(e?.toString?.() || '取消失败')
+    }
+  }
 }
 
 onMounted(async () => {
@@ -42,7 +75,9 @@ onMounted(async () => {
                 :key="item.id"
                 :activity="item"
                 :registered="true"
+                :show-apply="true"
                 @detail="goDetail(item.id)"
+                @cancel="onCancel(item.id)"
               />
             </template>
           </div>
