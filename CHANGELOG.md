@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.3](https://github.com/Huasushis/better-ustc-2/compare/v1.1.2...v1.1.3) (2025-12-18)
+
+
+### Bug Fixes
+
+* **AboutView:** fix about page version display ([177cb63](https://github.com/Huasushis/better-ustc-2/commit/177cb6331f4ab7373c09cc347679ef691a13d7a5))
+
 ## [1.1.2](https://github.com/Huasushis/better-ustc-2/compare/v1.1.1...v1.1.2) (2025-12-18)
 
 
