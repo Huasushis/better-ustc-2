@@ -1,6 +1,10 @@
 import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
 import Unocss from "unocss/vite";
+import { readFileSync } from "fs";
+
+// 读取 package.json 获取版本号
+const packageJson = JSON.parse(readFileSync("./package.json", "utf-8"));
 
 // @ts-expect-error process is a nodejs global
 const host = process.env.TAURI_DEV_HOST;
@@ -8,6 +12,11 @@ const host = process.env.TAURI_DEV_HOST;
 // https://vite.dev/config/
 export default defineConfig(async () => ({
   plugins: [vue(), Unocss()],
+  
+  // 定义全局常量，在代码中可以直接使用 __APP_VERSION__
+  define: {
+    __APP_VERSION__: JSON.stringify(packageJson.version),
+  },
 
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   //

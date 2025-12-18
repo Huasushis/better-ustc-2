@@ -3,7 +3,7 @@ import { NavBar, Cell, CellGroup } from 'vant'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
-const version = '0.1.0' // Should match package.json
+const version = __APP_VERSION__
 </script>
 
 <template>
